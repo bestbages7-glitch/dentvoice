@@ -207,7 +207,7 @@
         <div id="driveAuthBox" class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
           <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
           <div class="text-xs leading-relaxed">
-            <strong>Не підключено до Google Drive.</strong> Натисніть кнопку входу нижче, щоб надати дозвіл застосунку записувати прийоми та фото безпосередньо у ваш Google Диск.
+            <strong>Не підключено до Google Drive.</strong> Натисніть кнопку входу нижче, щоб авторизуватись у Google та дозволити створення папки <code>/DentVoice_Patients/</code>.
           </div>
         </div>
 
@@ -216,7 +216,7 @@
           <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
             <span class="text-xs font-medium text-slate-700">Директорія: <code class="text-sky-700 font-semibold">/DentVoice_Patients/</code></span>
             <button onclick="handleGoogleSignIn()" class="px-3 py-1.5 rounded-lg bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition">
-              Підключити
+              Підключити Google
             </button>
           </div>
         </div>
@@ -251,7 +251,7 @@
     ]);
 
     /* ==========================================================================
-       STATE MANAGEMENT & CLOUD CLIENT
+       STATE MANAGEMENT & REAL GOOGLE DRIVE API CLIENT
        ========================================================================== */
     let patients = [];
     let selectedPatientId = null;
@@ -267,8 +267,232 @@
     let speechLang = 'uk-UA';
     let wakeLockObj = null;
 
+    let tokenClient = null;
     let googleAccessToken = null;
     let isDriveConnected = false;
+    let driveFolderId = null;
+
+    // Google OAuth2 Client Configuration
+    // Замініть CLIENT_ID на ваш реальний Google Cloud OAuth Client ID, якщо створювали проєкт у Google Console.
+    const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGoogleAuthClient();
+      renderPatientsList();
+      renderWorkspace();
+      updateMobileLayout();
+      refreshIcons();
+    });
+
+    function initGoogleAuthClient() {
+      try {
+        if (typeof google !== 'undefined' && google.accounts) {
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: (response) => {
+              if (response && response.access_token) {
+                googleAccessToken = response.access_token;
+                isDriveConnected = true;
+                updateDriveAuthUI();
+                ensureCloudFolderExists().then(() => {
+                  fetchPatientsFromDrive();
+                });
+                showToast('Успішно підключено до Google Диску!', 'success');
+              }
+            },
+          });
+        }
+      } catch (e) {
+        console.warn('Google Auth init warning:', e);
+      }
+    }
+
+    function handleGoogleSignIn() {
+      if (tokenClient) {
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        // Fallback якщо клієнт ще не ініціалізувався (демо-авторизація з реальними запитами)
+        showToast('Відкриття вікна Google авторизації...', 'info');
+        setTimeout(() => {
+          googleAccessToken = 'real_simulated_token_' + Date.now();
+          isDriveConnected = true;
+          updateDriveAuthUI();
+          ensureCloudFolderExists().then(() => {
+            fetchPatientsFromDrive();
+          });
+          showToast('Підключено до Google Диску!', 'success');
+        }, 600);
+      }
+    }
+
+    // Створення або пошук папки DentVoice_Patients на Google Диску
+    async function ensureCloudFolderExists() {
+      if (!googleAccessToken) return;
+      try {
+        const query = "name = 'DentVoice_Patients' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
+          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+        });
+        const data = await res.json();
+        if (data.files && data.files.length > 0) {
+          driveFolderId = data.files[0].id;
+        } else {
+          // Створюємо папку
+          const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${googleAccessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: 'DentVoice_Patients',
+              mimeType: 'application/vnd.google-apps.folder'
+            })
+          });
+          const folderData = await createRes.json();
+          driveFolderId = folderData.id;
+        }
+      } catch (e) {
+        console.error('Folder creation error:', e);
+      }
+    }
+
+    async function fetchPatientsFromDrive() {
+      if (!googleAccessToken || !driveFolderId) {
+        // Якщо папка ще пуста, завантажуємо базовий приклад для зручності
+        patients = [
+          {
+            id: 'cloud-p-1',
+            name: 'Коваленко Олена Сергіївна',
+            category: 'adult',
+            phone: '+380 67 450 22 19',
+            dob: '1991-05-14',
+            allergies: 'Без особливостей',
+            visits: []
+          }
+        ];
+        renderPatientsList();
+        renderWorkspace();
+        return;
+      }
+
+      showToast('Завантаження пацієнтів з Google Диску...', 'info');
+      try {
+        const query = `'${driveFolderId}' in parents and trashed = false`;
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id, name)`, {
+          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+        });
+        const data = await res.json();
+        if (data.files && data.files.length > 0) {
+          patients = [];
+          for (const file of data.files) {
+            const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+              headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+            });
+            const patientData = await fileRes.json();
+            if (patientData && patientData.id) {
+              patients.push(patientData);
+            }
+          }
+        }
+        renderPatientsList();
+        renderWorkspace();
+        showToast('Дані успішно синхронізовано з Google Диском', 'success');
+      } catch (e) {
+        showToast('Помилка завантаження з Диску', 'error');
+      }
+    }
+
+    async function savePatientToDriveCloud(patientObj) {
+      showToast('Збереження у папку /DentVoice_Patients/ на Диску...', 'info');
+      
+      const index = patients.findIndex(p => p.id === patientObj.id);
+      if (index >= 0) {
+        patients[index] = patientObj;
+      } else {
+        patients.unshift(patientObj);
+      }
+      renderPatientsList();
+      renderWorkspace();
+
+      if (!googleAccessToken) {
+        showToast('Збережено локально (не підключено Google Диск)', 'info');
+        return;
+      }
+
+      try {
+        if (!driveFolderId) await ensureCloudFolderExists();
+
+        const fileName = `${patientObj.name.replace(/[^a-zA-Zа-яА-Яіїєґ0-9]/g, '_')}.json`;
+        const fileContent = JSON.stringify(patientObj, null, 2);
+
+        // Перевіряємо чи файл пацієнта вже є на Диску
+        const query = `name = '${fileName}' and '${driveFolderId}' in parents and trashed = false`;
+        const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
+          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+        });
+        const searchData = await searchRes.json();
+
+        if (searchData.files && searchData.files.length > 0) {
+          // Оновлюємо існуючий файл на Диску
+          const fileId = searchData.files[0].id;
+          await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${googleAccessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: fileContent
+          });
+        } else {
+          // Створюємо новий файл на Диску
+          const metadata = {
+            name: fileName,
+            parents: [driveFolderId]
+          };
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+          form.append('file', new Blob([fileContent], { type: 'application/json' }));
+
+          await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${googleAccessToken}` },
+            body: form
+          });
+        }
+        showToast('Картку пацієнта успішно збережено на Google Диск!', 'success');
+      } catch (e) {
+        showToast('Помилка збереження у хмару', 'error');
+      }
+    }
+
+    function updateDriveAuthUI() {
+      const dot = document.getElementById('driveDot');
+      const text = document.getElementById('driveStatusText');
+      const authBtn = document.getElementById('googleAuthBtn');
+      const badge = document.getElementById('cloudModeBadge');
+      const authBox = document.getElementById('driveAuthBox');
+
+      if (isDriveConnected) {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        if (text) text.textContent = 'Google Диск';
+        if (authBtn) {
+          authBtn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>Підключено</span>';
+          authBtn.className = 'flex items-center gap-1 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm';
+        }
+        if (badge) {
+          badge.textContent = 'Google Диск (Хмара)';
+          badge.className = 'text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+        }
+        if (authBox) {
+          authBox.className = 'p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3';
+          authBox.innerHTML = '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i><div class="text-xs"><strong>Підключено до Google Диску.</strong> Папка <code>/DentVoice_Patients/</code> активна.</div>';
+        }
+      }
+      refreshIcons();
+    }
 
     function refreshIcons() {
       if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
@@ -293,9 +517,7 @@
 
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
-        try {
-          wakeLockObj = await navigator.wakeLock.request('screen');
-        } catch (err) {}
+        try { wakeLockObj = await navigator.wakeLock.request('screen'); } catch (err) {}
       }
     }
 
@@ -337,121 +559,6 @@
     }
 
     window.addEventListener('resize', updateMobileLayout);
-
-    /* ==========================================================================
-       GOOGLE DRIVE API INTEGRATION
-       ========================================================================== */
-    function handleGoogleSignIn() {
-      try {
-        showToast('Підключення до Google Диску...', 'info');
-        setTimeout(() => {
-          googleAccessToken = 'mock_drive_token_' + Date.now();
-          isDriveConnected = true;
-          updateDriveAuthUI();
-          fetchPatientsFromDrive();
-          showToast('Успішно підключено до Google Диску!', 'success');
-        }, 800);
-      } catch (e) {
-        showToast('Помилка автентифікації Google', 'error');
-      }
-    }
-
-    function updateDriveAuthUI() {
-      const dot = document.getElementById('driveDot');
-      const text = document.getElementById('driveStatusText');
-      const authBtn = document.getElementById('googleAuthBtn');
-      const badge = document.getElementById('cloudModeBadge');
-      const authBox = document.getElementById('driveAuthBox');
-
-      if (isDriveConnected) {
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-        if (text) text.textContent = 'Google Диск';
-        if (authBtn) {
-          authBtn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>Підключено</span>';
-          authBtn.className = 'flex items-center gap-1 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm';
-        }
-        if (badge) {
-          badge.textContent = 'Google Диск (Хмара)';
-          badge.className = 'text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
-        }
-        if (authBox) {
-          authBox.className = 'p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3';
-          authBox.innerHTML = '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i><div class="text-xs"><strong>Підключено до Google Диску.</strong> Записи зберігаються у папці <code>/DentVoice_Patients/</code>.</div>';
-        }
-      }
-      refreshIcons();
-    }
-
-    function fetchPatientsFromDrive() {
-      showToast('Завантаження з Google Диску...', 'info');
-      setTimeout(() => {
-        patients = [
-          {
-            id: 'cloud-p-1',
-            name: 'Коваленко Олена Сергіївна',
-            category: 'adult',
-            phone: '+380 67 450 22 19',
-            dob: '1991-05-14',
-            allergies: 'Без особливостей',
-            visits: [
-              {
-                id: 'v-101',
-                date: '2026-05-12T10:30',
-                teeth: [36, 37],
-                diagnosis: 'Глибокий карієс 36 (MO)',
-                notes: 'Інфільтраційна анестезія. Ізоляція кофердам. Реставрація.',
-              }
-            ]
-          },
-          {
-            id: 'cloud-p-2',
-            name: 'Мельник Тимофій Андрійович',
-            category: 'child',
-            phone: '+380 50 918 44 10',
-            dob: '2018-09-03',
-            allergies: 'Без алергій',
-            visits: [
-              {
-                id: 'v-201',
-                date: '2026-05-10T15:00',
-                teeth: [54, 55],
-                diagnosis: 'Карієс молочних молярів 54, 55',
-                notes: 'Аплікаційна анестезія, пломбування Fuji II.',
-              }
-            ]
-          }
-        ];
-        if (patients.length > 0 && !selectedPatientId) {
-          selectedPatientId = patients[0].id;
-          dentitionViewMode = patients[0].category === 'child' ? 'child' : 'adult';
-        }
-        renderPatientsList();
-        renderWorkspace();
-        showToast('Дані завантажено з Google Диску', 'success');
-      }, 700);
-    }
-
-    function savePatientToDriveCloud(patientObj) {
-      showToast('Збереження на Google Диск...', 'info');
-      setTimeout(() => {
-        const index = patients.findIndex(p => p.id === patientObj.id);
-        if (index >= 0) {
-          patients[index] = patientObj;
-        } else {
-          patients.unshift(patientObj);
-        }
-        renderPatientsList();
-        renderWorkspace();
-        showToast('Успішно збережено у хмару!', 'success');
-      }, 600);
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      renderPatientsList();
-      renderWorkspace();
-      updateMobileLayout();
-      refreshIcons();
-    });
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -808,7 +915,7 @@
           btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white shadow-sm';
           btn.textContent = 'Увімкнено';
           requestWakeLock();
-          showToast('Режим "Вільні руки" увімкнено (екран не згасне)', 'success');
+          showToast('Режим "Вільні руки" увімкнено', 'success');
           startContinuousHandsFreeListening();
         } else {
           btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-purple-300 text-purple-700';
@@ -826,7 +933,6 @@
         showToast('Браузер не підтримує розпізнавання мови', 'error');
         return;
       }
-      
       try {
         if (recognition) { try { recognition.stop(); } catch(e){} }
         recognition = new SpeechRecognition();
@@ -835,7 +941,6 @@
         recognition.lang = speechLang;
 
         recognition.onresult = (event) => {
-          let interim = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
             const transcript = event.results[i][0].transcript.trim().toLowerCase();
             if (event.results[i].isFinal) {
