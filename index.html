@@ -4,9 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DentVoice — Хмарний стоматологічний щоденник</title>
-  
-  <!-- Favicon: Зубчик з мікрофоном -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2C7.5 2 4 4.5 4 8c0 4.5 2 9 4.5 13 .8-2 1.5-4 3.5-4s2.7 2 3.5 4c2.5-4 4.5-8.5 4.5-13 0-3.5-3.5-6-8-6z'/%3E%3Cpath d='M9 8a3 3 0 0 0 6 0v2a3 3 0 0 1-6 0V8z'/%3E%3Cpath d='M12 13v2'/%3E%3Cpath d='M10 15h4'/%3E%3C/svg%3E">
+
+  <!-- PWA Manifest & Meta Tags -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#0284c7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="DentVoice" />
+
+  <!-- Іконка для Android & iOS: Зубчик з мікрофоном -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230284c7'/%3E%3Cpath d='M256 60C160 60 90 120 90 200c0 90 40 180 90 260 16-40 30-80 76-80s60 40 76 80c50-80 90-170 90-260 0-80-70-140-166-140z' fill='white' stroke='%230369a1' stroke-width='14' stroke-linejoin='round'/%3E%3Crect x='216' y='140' width='80' height='120' rx='40' fill='%230284c7'/%3E%3Cpath d='M186 210c0 40 30 70 70 70s70-30 70-70' fill='none' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='256' y1='280' x2='256' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='216' y1='330' x2='296' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230284c7'/%3E%3Cpath d='M256 60C160 60 90 120 90 200c0 90 40 180 90 260 16-40 30-80 76-80s60 40 76 80c50-80 90-170 90-260 0-80-70-140-166-140z' fill='white' stroke='%230369a1' stroke-width='14' stroke-linejoin='round'/%3E%3Crect x='216' y='140' width='80' height='120' rx='40' fill='%230284c7'/%3E%3Cpath d='M186 210c0 40 30 70 70 70s70-30 70-70' fill='none' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='256' y1='280' x2='256' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='216' y1='330' x2='296' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -231,8 +240,40 @@
     let wakeLock = null;
     let deferredInstallPrompt = null;
 
-    // Отримуємо збережену URL адресу Google Apps Script
     let gasBackendUrl = localStorage.getItem('DENTVOICE_GAS_URL') || '';
+
+    // Реєстрація Service Worker для повноцінного WebAPK
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
+      });
+    }
+
+    // Відловлюємо системний діалог встановлення
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      const installBtn = document.getElementById('installPwaBtn');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+        installBtn.classList.add('flex');
+      }
+    });
+
+    function triggerPWAInstall() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            showToast('Встановлення розпочато!', 'success');
+          }
+          deferredInstallPrompt = null;
+        });
+      } else {
+        // Якщо браузер ще кешує
+        showToast('Відкрийте меню Chrome (3 крапки) та оберіть "Встановити застосунок"', 'info');
+      }
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
       updateCloudStatus();
@@ -240,7 +281,6 @@
         document.getElementById('gasUrlInput').value = gasBackendUrl;
         loadFromGoogleDrive();
       } else {
-        // Початкові демо-пацієнти якщо Диск ще не підключено
         patients = [
           {
             id: 'p-1',
@@ -258,23 +298,6 @@
       }
       refreshIcons();
     });
-
-    // PWA Install Event
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredInstallPrompt = e;
-    });
-
-    function triggerPWAInstall() {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        deferredInstallPrompt.userChoice.then(() => {
-          deferredInstallPrompt = null;
-        });
-      } else {
-        showToast('Натисніть "Додати на головний екран" у меню браузера', 'info');
-      }
-    }
 
     function updateCloudStatus() {
       const badge = document.getElementById('cloudStatusBadge');
@@ -298,12 +321,8 @@
       loadFromGoogleDrive();
     }
 
-    // Хмарне завантаження з Google Диску
     async function loadFromGoogleDrive() {
-      if (!gasBackendUrl) {
-        showToast('Вкажіть посилання на скрипт Google Диску в налаштуваннях', 'info');
-        return;
-      }
+      if (!gasBackendUrl) return;
       showToast('Завантаження з Google Диску...', 'info');
       try {
         const res = await fetch(gasBackendUrl + '?action=getPatients');
@@ -313,14 +332,13 @@
           if (patients.length && !selectedPatientId) selectedPatientId = patients[0].id;
           renderPatientsList();
           renderWorkspace();
-          showToast('Дані успішно завантажено з Google Диску', 'success');
+          showToast('Дані завантажено з Google Диску', 'success');
         }
       } catch (e) {
-        showToast('Помилка підключення до Google Диску', 'error');
+        showToast('Помилка завантаження з Google Диску', 'error');
       }
     }
 
-    // Хмарне збереження на Google Диск
     async function saveToGoogleDrive(patient) {
       if (!gasBackendUrl) {
         showToast('Збережено локально. Підключіть Google Диск у шапці!', 'info');
@@ -412,7 +430,6 @@
             <span class="text-xs text-slate-500 truncate max-w-[180px]">${p.name}</span>
           </div>
 
-          <!-- Header -->
           <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
               <div class="flex items-center gap-2">
@@ -428,7 +445,6 @@
             </div>
           </div>
 
-          <!-- Visit Panel -->
           <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div class="px-3.5 py-2.5 bg-slate-900 text-white flex items-center justify-between">
               <h3 class="text-xs sm:text-sm font-bold">Голосовий прийом</h3>
@@ -440,7 +456,6 @@
             </div>
 
             <div class="p-3.5 sm:p-4 space-y-3.5">
-              <!-- Dental Chart -->
               <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <div class="flex justify-between text-[11px] font-bold mb-1">
                   <span class="text-slate-500">Зубна формула FDI:</span>
@@ -449,7 +464,6 @@
                 <div class="overflow-x-auto pb-1">${renderDentalChartHTML()}</div>
               </div>
 
-              <!-- Hands free toggle -->
               <div class="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-3 py-2">
                 <div>
                   <div class="text-xs font-bold text-purple-900">Режим "Вільні руки" (Команди)</div>
@@ -460,7 +474,6 @@
                 </button>
               </div>
 
-              <!-- Voice Button & Form -->
               <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
                 <div class="sm:col-span-4 flex flex-col items-center">
                   <button onclick="toggleVoice()" id="micBtn" class="w-16 h-16 rounded-full flex items-center justify-center text-white ${isRecording ? 'bg-rose-600 recording-pulse' : 'bg-gradient-to-br from-sky-500 to-teal-600 shadow-md'}">
@@ -484,7 +497,6 @@
             </div>
           </div>
 
-          <!-- History -->
           <div class="space-y-2 pb-10">
             <h4 class="font-bold text-xs text-slate-700">Історія прийомів (${(p.visits || []).length})</h4>
             ${!(p.visits || []).length ? '<div class="bg-white p-4 rounded-xl border border-slate-200 text-center text-xs text-slate-400">Історія порожня</div>' : 
@@ -562,7 +574,6 @@
       renderWorkspace();
     }
 
-    /* Hands-free & Speech */
     async function toggleHandsFree() {
       isHandsFree = !isHandsFree;
       if (isHandsFree) {
