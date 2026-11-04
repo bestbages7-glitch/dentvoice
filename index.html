@@ -63,7 +63,7 @@
 
     <!-- Right Actions -->
     <div class="flex items-center gap-1.5 sm:gap-2">
-      <!-- Кнопка Встановити застосунок (автоматично ховається, якщо вже встановлено) -->
+      <!-- Кнопка Встановити застосунок (ховається, якщо вже запущено як PWA) -->
       <button id="installPwaBtn" onclick="triggerPWAInstall()" class="hidden items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition">
         <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
         <span>Встановити</span>
@@ -146,7 +146,7 @@
 
       <div class="p-5 space-y-4 text-xs sm:text-sm">
         <p class="text-slate-600 leading-relaxed">
-          Вставте сюди посилання на ваш опублікований вебзастосунок <strong>Google Apps Script</strong>. Усі пацієнти та прийоми зберігатимуться у папці <code>/DentVoice_Patients/</code> на вашому Диску.
+          Вставте сюди посилання на ваш опублікований вебзастосунок <strong>Google Apps Script</strong>. Усі пацієнти автоматично записуються в реєстрову таблицю, а кожен візит формується в особистий Google Документ у папці <code>/DentVoice_Patients/</code>.
         </p>
 
         <div>
@@ -155,7 +155,7 @@
         </div>
 
         <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs">
-          💡 Це посилання зберігається лише один раз у браузері. Після цього вхід відбувається автоматично.
+          💡 Посилання зберігається один раз у пам'яті браузера. Авторизація працює повністю автоматично.
         </div>
       </div>
 
@@ -187,7 +187,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">ПІБ пацієнта *</label>
-          <input id="formName" type="text" required placeholder="Напр.: Коваленко Марія" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-sky-500/30" />
+          <input id="formName" type="text" required placeholder="Напр.: Коваленко Марія Олексіївна" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-sky-500/30" />
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -233,6 +233,7 @@
     let activeFilter = 'all';
     let modalCat = 'adult';
     let selectedTeeth = [];
+    let currentVisitPhotos = [];
     let dentitionMode = 'adult';
     let isRecording = false;
     let isHandsFree = false;
@@ -242,20 +243,17 @@
 
     let gasBackendUrl = localStorage.getItem('DENTVOICE_GAS_URL') || '';
 
-    // Перевірка, чи застосунок вже запущено як встановлений PWA
     function isRunningStandalone() {
       return (window.matchMedia('(display-mode: standalone)').matches) || 
              (window.navigator.standalone === true);
     }
 
-    // Реєстрація Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
       });
     }
 
-    // Відловлюємо подію готовності до встановлення
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
@@ -266,12 +264,11 @@
       }
     });
 
-    // Якщо користувач щойно успішно встановив застосунок
     window.addEventListener('appinstalled', () => {
       const installBtn = document.getElementById('installPwaBtn');
       if (installBtn) installBtn.classList.add('hidden');
       deferredInstallPrompt = null;
-      showToast('DentVoice успішно встановлено на головний екран!', 'success');
+      showToast('DentVoice успішно встановлено!', 'success');
     });
 
     function triggerPWAInstall() {
@@ -290,7 +287,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Якщо відкрито як окремий додаток — повністю ховаємо кнопку
       if (isRunningStandalone()) {
         const installBtn = document.getElementById('installPwaBtn');
         if (installBtn) installBtn.classList.add('hidden');
@@ -337,13 +333,13 @@
       localStorage.setItem('DENTVOICE_GAS_URL', url);
       updateCloudStatus();
       closeDriveModal();
-      showToast('Google Диск успішно налаштовано!', 'success');
+      showToast('Google Диск налаштовано!', 'success');
       loadFromGoogleDrive();
     }
 
     async function loadFromGoogleDrive() {
       if (!gasBackendUrl) return;
-      showToast('Завантаження з Google Диску...', 'info');
+      showToast('Оновлення з Google Диску...', 'info');
       try {
         const res = await fetch(gasBackendUrl + '?action=getPatients');
         const data = await res.json();
@@ -352,29 +348,10 @@
           if (patients.length && !selectedPatientId) selectedPatientId = patients[0].id;
           renderPatientsList();
           renderWorkspace();
-          showToast('Дані завантажено з Google Диску', 'success');
+          showToast('Дані пацієнтів оновлено з Диску', 'success');
         }
       } catch (e) {
-        showToast('Помилка завантаження з Google Диску', 'error');
-      }
-    }
-
-    async function saveToGoogleDrive(patient) {
-      if (!gasBackendUrl) {
-        showToast('Збережено локально. Підключіть Google Диск у шапці!', 'info');
-        return;
-      }
-      showToast('Збереження у папку /DentVoice_Patients/...', 'info');
-      try {
-        await fetch(gasBackendUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'savePatient', patient: patient })
-        });
-        showToast('Успішно збережено на Google Диск!', 'success');
-      } catch (e) {
-        showToast('Помилка збереження на Google Диск', 'error');
+        showToast('Помилка завантаження з Диску', 'error');
       }
     }
 
@@ -407,7 +384,7 @@
           </div>
           <div class="text-[11px] text-slate-500 mt-1 flex justify-between">
             <span>${p.phone || 'Без тел.'}</span>
-            <span>Візитів: ${(p.visits || []).length}</span>
+            <span>${p.docUrl ? '<span class="text-sky-600 font-medium">📄 Картка Doc</span>' : 'Візитів: ' + (p.visits || []).length}</span>
           </div>
         </div>
       `).join('');
@@ -417,6 +394,7 @@
       if (isRecording) stopRecording();
       selectedPatientId = id;
       selectedTeeth = [];
+      currentVisitPhotos = [];
       const p = patients.find(x => x.id === id);
       if (p) dentitionMode = p.category === 'child' ? 'child' : 'adult';
       
@@ -433,11 +411,42 @@
       document.getElementById('patientWorkspace').classList.add('hidden');
     }
 
+    function handlePhotoUpload(event) {
+      const files = event.target.files;
+      if (!files || !files.length) return;
+      
+      for (let file of files) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          currentVisitPhotos.push(e.target.result);
+          renderPhotoPreviews();
+          showToast('Фото додано', 'info');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function renderPhotoPreviews() {
+      const box = document.getElementById('photoPreviewContainer');
+      if (!box) return;
+      box.innerHTML = currentVisitPhotos.map((src, i) => `
+        <div class="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+          <img src="${src}" class="w-full h-full object-cover" />
+          <button onclick="removePhoto(${i})" class="absolute top-0 right-0 bg-red-600 text-white rounded-bl p-0.5 text-[9px]">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removePhoto(idx) {
+      currentVisitPhotos.splice(idx, 1);
+      renderPhotoPreviews();
+    }
+
     function renderWorkspace() {
       const container = document.getElementById('patientWorkspace');
       const p = patients.find(x => x.id === selectedPatientId);
       if (!p) {
-        container.innerHTML = '<div class="flex-1 flex items-center justify-center text-slate-400 text-xs">Оберіть пацієнта</div>';
+        container.innerHTML = '<div class="flex-1 flex items-center justify-center text-slate-400 text-xs">Оберіть або додайте пацієнта</div>';
         return;
       }
 
@@ -450,6 +459,7 @@
             <span class="text-xs text-slate-500 truncate max-w-[180px]">${p.name}</span>
           </div>
 
+          <!-- Header -->
           <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs flex items-center justify-between">
             <div>
               <div class="flex items-center gap-2">
@@ -457,14 +467,17 @@
                 <span class="text-[10px] px-2 py-0.5 rounded-full ${p.category === 'child' ? 'bg-amber-100 text-amber-800' : 'bg-sky-50 text-sky-800'}">
                   ${p.category === 'child' ? '🧸 Дитина' : '🧑 Дорослий'}
                 </span>
+                ${p.docUrl ? `<a href="${p.docUrl}" target="_blank" class="text-[11px] font-semibold text-sky-600 hover:text-sky-800 underline ml-2">Відкрити Doc ↗</a>` : ''}
               </div>
-              <div class="text-[11px] text-slate-500 mt-1 flex gap-3">
+              <div class="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                 <span>📞 ${p.phone || 'Не вказано'}</span>
                 <span>🎂 ${p.dob || 'Вік не вказано'}</span>
+                <span class="text-rose-600 font-medium">⚠️ ${p.allergies || 'Без алергій'}</span>
               </div>
             </div>
           </div>
 
+          <!-- Visit Panel -->
           <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div class="px-3.5 py-2.5 bg-slate-900 text-white flex items-center justify-between">
               <h3 class="text-xs sm:text-sm font-bold">Голосовий прийом</h3>
@@ -476,6 +489,7 @@
             </div>
 
             <div class="p-3.5 sm:p-4 space-y-3.5">
+              <!-- Dental Chart -->
               <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                 <div class="flex justify-between text-[11px] font-bold mb-1">
                   <span class="text-slate-500">Зубна формула FDI:</span>
@@ -484,6 +498,7 @@
                 <div class="overflow-x-auto pb-1">${renderDentalChartHTML()}</div>
               </div>
 
+              <!-- Hands free toggle -->
               <div class="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-3 py-2">
                 <div>
                   <div class="text-xs font-bold text-purple-900">Режим "Вільні руки" (Команди)</div>
@@ -494,6 +509,7 @@
                 </button>
               </div>
 
+              <!-- Voice Button & Form -->
               <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
                 <div class="sm:col-span-4 flex flex-col items-center">
                   <button onclick="toggleVoice()" id="micBtn" class="w-16 h-16 rounded-full flex items-center justify-center text-white ${isRecording ? 'bg-rose-600 recording-pulse' : 'bg-gradient-to-br from-sky-500 to-teal-600 shadow-md'}">
@@ -507,32 +523,51 @@
                 <div class="sm:col-span-8 space-y-2">
                   <input id="vDiag" type="text" placeholder="Діагноз (напр.: Карієс #36)" class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none" />
                   <textarea id="vNotes" rows="3" placeholder="Протокол лікування диктується голосом..." class="w-full p-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none"></textarea>
-                  <div class="flex justify-end">
+                  
+                  <!-- Photo attachment & Actions -->
+                  <div class="flex items-center justify-between pt-1">
+                    <label class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium">
+                      <i data-lucide="camera" class="w-4 h-4 text-sky-600"></i>
+                      <span>Додати фото</span>
+                      <input type="file" accept="image/*" multiple onchange="handlePhotoUpload(event)" class="hidden" />
+                    </label>
+
                     <button onclick="saveCurrentVisit()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5">
-                      <i data-lucide="cloud-upload" class="w-4 h-4"></i> Зберегти на Google Диск
+                      <i data-lucide="cloud-upload" class="w-4 h-4"></i> Зберегти в Doc пацієнта
                     </button>
                   </div>
+
+                  <!-- Photo previews -->
+                  <div id="photoPreviewContainer" class="flex gap-2 pt-1 overflow-x-auto"></div>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- History (Reverse chronological) -->
           <div class="space-y-2 pb-10">
             <h4 class="font-bold text-xs text-slate-700">Історія прийомів (${(p.visits || []).length})</h4>
             ${!(p.visits || []).length ? '<div class="bg-white p-4 rounded-xl border border-slate-200 text-center text-xs text-slate-400">Історія порожня</div>' : 
               p.visits.map(v => `
-                <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
                   <div class="flex justify-between font-bold text-slate-800 border-b pb-1">
-                    <span>${v.diagnosis}</span>
+                    <span class="text-sky-700 font-semibold">${v.diagnosis}</span>
                     <span class="text-[10px] text-slate-400 font-normal">${v.date}</span>
                   </div>
+                  ${v.teeth && v.teeth.length ? `<div class="text-[11px] font-bold text-teal-700">Зуби: #${v.teeth.join(', #')}</div>` : ''}
                   <p class="text-slate-600">${v.notes}</p>
+                  ${v.photos && v.photos.length ? `
+                    <div class="flex gap-1.5 pt-1 overflow-x-auto">
+                      ${v.photos.map(src => `<img src="${src}" class="w-12 h-12 rounded object-cover border" />`).join('')}
+                    </div>
+                  ` : ''}
                 </div>
               `).join('')}
           </div>
         </div>
       `;
       refreshIcons();
+      renderPhotoPreviews();
     }
 
     function renderDentalChartHTML() {
@@ -561,7 +596,7 @@
             <div class="text-[10px] font-semibold text-amber-800">🧸 Молочні</div>
             <div class="flex justify-center gap-1 min-w-max">
               <div class="flex gap-1 pr-1.5 border-r border-amber-400">${CHILD_UPPER_RIGHT.map(n => renderTooth(n, true)).join('')}</div>
-              <div class="flex gap-1 pl-1.5">${CHILD_UPPER_LEFT.map(n => renderTooth(n, true)).join('')}</div>
+              <div class="flex gap-1 pl-2">${CHILD_UPPER_LEFT.map(n => renderTooth(n, true)).join('')}</div>
             </div>
             <div class="flex justify-center gap-1 min-w-max pt-1 border-t border-amber-200">
               <div class="flex gap-1 pr-1.5 border-r border-amber-400">${CHILD_LOWER_RIGHT.map(n => renderTooth(n, true)).join('')}</div>
@@ -689,15 +724,31 @@
         date: new Date().toLocaleDateString('uk-UA') + ' ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
         teeth: [...selectedTeeth],
         diagnosis: diag || ('Лікування #' + selectedTeeth.join(', #')),
-        notes: notes || 'Проведено лікування згідно з протоколом.'
+        notes: notes || 'Проведено лікування згідно з протоколом.',
+        photos: [...currentVisitPhotos]
       };
 
-      p.visits = [newVisit, ...(p.visits || [])];
+      if (!p.visits) p.visits = [];
+      p.visits.unshift(newVisit);
+
       selectedTeeth = [];
+      const photosToSend = [...currentVisitPhotos];
+      currentVisitPhotos = [];
       isRecording = false;
 
       renderWorkspace();
-      saveToGoogleDrive(p);
+
+      if (gasBackendUrl) {
+        showToast('Запис у Google Doc пацієнта...', 'info');
+        fetch(gasBackendUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'saveVisit', patient: p, visit: newVisit })
+        }).then(() => {
+          showToast('Прийом збережено зверху картки!', 'success');
+        });
+      }
     }
 
     function savePatientForm(e) {
@@ -718,7 +769,25 @@
       closePatientModal();
       renderPatientsList();
       renderWorkspace();
-      saveToGoogleDrive(newP);
+
+      if (gasBackendUrl) {
+        showToast('Створення картки та запис у таблицю...', 'info');
+        fetch(gasBackendUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'savePatient', patient: newP })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            newP.docUrl = data.docUrl;
+            renderPatientsList();
+            renderWorkspace();
+            showToast('Картку Google Doc успішно створено!', 'success');
+          }
+        })
+        .catch(() => showToast('Збережено локально', 'info'));
+      }
     }
 
     function setModalCategory(c) {
