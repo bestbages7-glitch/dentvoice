@@ -2,89 +2,83 @@
 <html lang="uk" class="h-full bg-slate-50">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DentVoice Pro — Хмарний стоматологічний щоденник (Google Drive API)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>DentVoice — Хмарний стоматологічний щоденник</title>
+  
+  <!-- Favicon: Зубчик з мікрофоном -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2C7.5 2 4 4.5 4 8c0 4.5 2 9 4.5 13 .8-2 1.5-4 3.5-4s2.7 2 3.5 4c2.5-4 4.5-8.5 4.5-13 0-3.5-3.5-6-8-6z'/%3E%3Cpath d='M9 8a3 3 0 0 0 6 0v2a3 3 0 0 1-6 0V8z'/%3E%3Cpath d='M12 13v2'/%3E%3Cpath d='M10 15h4'/%3E%3C/svg%3E">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     @keyframes pulse-ring {
       0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
       70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
     .recording-pulse { animation: pulse-ring 1.8s infinite; }
-    .tooth-btn { transition: all 0.15s ease; }
-    .tooth-btn:hover { transform: translateY(-2px); }
-    @media print {
-      .no-print { display: none !important; }
-      .print-only { display: block !important; }
-      body { background: white !important; }
-    }
+    .tooth-btn { transition: all 0.12s ease; }
+    .tooth-btn:active { transform: scale(0.92); }
   </style>
 </head>
-<body class="h-full flex flex-col text-slate-800 overflow-x-hidden select-none sm:select-auto">
+<body class="h-full flex flex-col text-slate-800 overflow-hidden select-none sm:select-auto">
 
   <!-- TOP HEADER -->
-  <header class="no-print bg-white border-b border-slate-200 px-3 sm:px-4 py-2.5 flex items-center justify-between shrink-0 z-20 shadow-sm">
-    <div class="flex items-center gap-2.5">
-      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-sky-500 to-teal-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-        <!-- Зубчик з мікрофоном -->
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a4 4 0 0 0-4 4v2a2 2 0 0 1-2 2H5a2 2 0 0 0-2 2v2a7 7 0 0 0 14 0v-2a2 2 0 0 0-2-2h-1a2 2 0 0 1-2-2V6a4 4 0 0 0-4-4z"/>
-          <path d="M12 11v3"/>
+  <header class="bg-white border-b border-slate-200 px-3 sm:px-4 py-2 flex items-center justify-between shrink-0 z-20 shadow-xs">
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- Фірмовий логотип: зуб з мікрофоном -->
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-sky-500 to-teal-600 flex items-center justify-center text-white shadow-sm shadow-sky-500/30 shrink-0">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C7.5 2 4 4.5 4 8c0 4.5 2 9 4.5 13 .8-2 1.5-4 3.5-4s2.7 2 3.5 4c2.5-4 4.5-8.5 4.5-13 0-3.5-3.5-6-8-6z"/>
+          <path d="M9 8a3 3 0 0 0 6 0v2a3 3 0 0 1-6 0V8z"/>
+          <path d="M12 13v2"/>
           <path d="M10 15h4"/>
         </svg>
       </div>
       <div>
-        <div class="flex items-center gap-2">
-          <h1 class="font-bold text-slate-900 text-sm sm:text-lg leading-tight">DentVoice</h1>
-          <span id="cloudModeBadge" class="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Google Drive</span>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <h1 class="font-bold text-slate-900 text-sm sm:text-base leading-tight">DentVoice</h1>
+          <span id="cloudStatusBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Диск: Не налаштовано</span>
         </div>
-        <p class="text-[10px] sm:text-xs text-slate-500 hidden sm:block">Без локального зберігання • Потоковий запис у хмару</p>
+        <p class="text-[10px] text-slate-500 hidden sm:block">Прямий запис у /DentVoice_Patients/ без заповнення пам'яті</p>
       </div>
     </div>
 
     <!-- Right Actions -->
     <div class="flex items-center gap-1.5 sm:gap-2">
-      <button id="installPwaBtn" onclick="installPWA()" class="hidden items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition">
-        <i data-lucide="download" class="w-3.5 h-3.5"></i>
-        <span class="hidden md:inline">Встановити</span>
+      <!-- Кнопка Встановити застосунок -->
+      <button id="installPwaBtn" onclick="triggerPWAInstall()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition">
+        <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
+        <span>Встановити</span>
       </button>
 
-      <button onclick="openDriveModal()" id="driveStatusBtn" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-        <span id="driveDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
-        <i data-lucide="cloud" class="w-4 h-4 text-sky-600"></i>
-        <span id="driveStatusText" class="hidden lg:inline">Google Диск</span>
+      <!-- Налаштування хмари -->
+      <button onclick="openDriveModal()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+        <i data-lucide="settings" class="w-3.5 h-3.5 text-sky-600"></i>
+        <span class="hidden sm:inline">Хмара</span>
       </button>
 
-      <button onclick="handleGoogleSignIn()" id="googleAuthBtn" class="flex items-center gap-1 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-sm transition">
-        <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-        <span>Вхід</span>
-      </button>
-
-      <button onclick="openPatientModal()" class="flex items-center gap-1 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition">
+      <!-- Новий пацієнт -->
+      <button onclick="openPatientModal()" class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition">
         <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
         <span>Пацієнт</span>
       </button>
     </div>
   </header>
 
-  <!-- MAIN WORKSPACE -->
+  <!-- WORKSPACE -->
   <div class="flex-1 flex overflow-hidden relative">
 
-    <!-- LEFT SIDEBAR: PATIENT SEARCH & LIST FROM GOOGLE DRIVE -->
-    <aside id="patientsSidebar" class="no-print w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10">
-      <!-- Search Bar -->
+    <!-- LEFT SIDEBAR: PATIENTS -->
+    <aside id="patientsSidebar" class="w-full md:w-80 lg:w-96 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10">
       <div class="p-3 border-b border-slate-100 space-y-2">
         <div class="relative">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
@@ -93,158 +87,128 @@
             type="text"
             oninput="renderPatientsList()"
             placeholder="Пошук пацієнта..."
-            class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+            class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30"
           />
-          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
         </div>
 
-        <!-- Category Filter -->
         <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
-          <button onclick="setCategoryFilter('all')" id="filter-all" class="py-1.5 rounded-lg transition bg-white text-slate-800 shadow-sm">
-            Всі <span id="count-all" class="ml-0.5 text-[10px] text-slate-500"></span>
+          <button onclick="setCategoryFilter('all')" id="filter-all" class="py-1.5 rounded-lg bg-white text-slate-800 shadow-sm">
+            Всі <span id="count-all" class="text-[10px] text-slate-500"></span>
           </button>
-          <button onclick="setCategoryFilter('adult')" id="filter-adult" class="py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
-            <span>🧑 Дорослі</span>
-            <span id="count-adult" class="text-[10px] opacity-75"></span>
+          <button onclick="setCategoryFilter('adult')" id="filter-adult" class="py-1.5 rounded-lg text-slate-600">
+            🧑 Дорослі <span id="count-adult" class="text-[10px]"></span>
           </button>
-          <button onclick="setCategoryFilter('child')" id="filter-child" class="py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
-            <span>🧸 Діти</span>
-            <span id="count-child" class="text-[10px] opacity-75"></span>
+          <button onclick="setCategoryFilter('child')" id="filter-child" class="py-1.5 rounded-lg text-slate-600">
+            🧸 Діти <span id="count-child" class="text-[10px]"></span>
           </button>
         </div>
       </div>
 
-      <!-- Patient List Container -->
       <div id="patientsListContainer" class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100"></div>
 
-      <!-- Cloud Sync Status Bar -->
       <div class="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-        <button onclick="fetchPatientsFromDrive()" class="hover:text-sky-700 flex items-center gap-1 font-medium">
-          <i data-lucide="cloud-download" class="w-3.5 h-3.5"></i> Синхронізувати
+        <button onclick="loadFromGoogleDrive()" class="hover:text-sky-700 flex items-center gap-1 font-medium">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Оновити з Диску
         </button>
-        <span id="cloudStorageNote" class="text-[10px] text-slate-400">Хмара Google Drive</span>
+        <span class="text-[10px] text-slate-400">Google Drive Хмара</span>
       </div>
     </aside>
 
-    <!-- MAIN CONTENT: PATIENT CARD + VOICE RECORDER + DENTAL FORMULA -->
+    <!-- MAIN RIGHT: WORKSPACE -->
     <main id="patientWorkspace" class="hidden md:flex flex-1 flex-col bg-slate-50 overflow-y-auto custom-scrollbar w-full">
-      <!-- Populated dynamically via JS -->
+      <!-- Populated via JS -->
     </main>
   </div>
 
-  <!-- MODAL: CREATE / EDIT PATIENT -->
-  <div id="patientModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-        <h3 id="patientModalTitle" class="font-bold text-slate-800 text-base">Нова картка пацієнта</h3>
-        <button onclick="closePatientModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+  <!-- MODAL: GOOGLE APPS SCRIPT URL SETTINGS -->
+  <div id="driveModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-sky-50/70">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center">
+            <i data-lucide="hard-drive" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm sm:text-base">Підключення Google Диску</h3>
+        </div>
+        <button onclick="closeDriveModal()" class="text-slate-400 hover:text-slate-600 p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form onsubmit="savePatientForm(event)" class="p-4 sm:p-5 space-y-4">
-        <input type="hidden" id="formPatientId" />
+      <div class="p-5 space-y-4 text-xs sm:text-sm">
+        <p class="text-slate-600 leading-relaxed">
+          Вставте сюди посилання на ваш опублікований вебзастосунок <strong>Google Apps Script</strong>. Усі пацієнти та голосові записи будуть автоматично створюватися у папці <code>/DentVoice_Patients/</code> на вашому Диску.
+        </p>
+
         <div>
-          <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Категорія пацієнта</label>
-          <div class="grid grid-cols-2 gap-2.5">
-            <button type="button" id="modalBtnAdult" onclick="setModalPatientCategory('adult')" class="py-2 px-3 rounded-xl border-2 border-teal-600 bg-teal-50/70 text-teal-900 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
-              <span class="text-base">🧑</span>
-              <div class="text-left">
-                <div class="leading-none">Дорослий</div>
-                <span class="text-[9px] font-normal text-slate-500">11–48</span>
-              </div>
-            </button>
-            <button type="button" id="modalBtnChild" onclick="setModalPatientCategory('child')" class="py-2 px-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition">
-              <span class="text-base">🧸</span>
-              <div class="text-left">
-                <div class="leading-none">Дитина</div>
-                <span class="text-[9px] font-normal text-slate-500">51–85</span>
-              </div>
-            </button>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Web App URL (Google Apps Script) *</label>
+          <input id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none" />
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs">
+          💡 Це посилання зберігається лише один раз у браузері телефону. Після збереження ніяких паролів більше вводити не потрібно.
+        </div>
+      </div>
+
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
+        <button onclick="closeDriveModal()" class="px-4 py-2 rounded-xl text-xs text-slate-600 hover:bg-slate-100">Закрити</button>
+        <button onclick="saveGasUrl()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white">Зберегти та підключити</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NEW PATIENT -->
+  <div id="patientModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <h3 class="font-bold text-slate-800 text-sm sm:text-base">Нова картка пацієнта</h3>
+        <button onclick="closePatientModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="savePatientForm(event)" class="p-4 sm:p-5 space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Категорія</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="mBtnAdult" onclick="setModalCategory('adult')" class="py-2 rounded-xl border-2 border-teal-600 bg-teal-50 text-teal-900 font-bold text-xs">🧑 Дорослий (11–48)</button>
+            <button type="button" id="mBtnChild" onclick="setModalCategory('child')" class="py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-bold text-xs">🧸 Дитина (51–85)</button>
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">ПІБ пацієнта *</label>
-          <input id="formPatientName" type="text" required placeholder="Напр.: Коваленко Марія" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500" />
+          <input id="formName" type="text" required placeholder="Напр.: Коваленко Марія Олексіївна" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-sky-500/30" />
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Телефон</label>
-            <input id="formPatientPhone" type="tel" placeholder="+380..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500" />
+            <input id="formPhone" type="tel" placeholder="+380..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Дата народження</label>
-            <input id="formPatientDob" type="date" onchange="autoDetectAgeCategory(this.value)" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500" />
+            <input id="formDob" type="date" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none" />
           </div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Алергоанамнез / Примітки</label>
-          <input id="formPatientAllergies" type="text" placeholder="Без особливостей" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500" />
+          <input id="formAllergies" type="text" placeholder="Без алергій" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none" />
         </div>
 
-        <div class="pt-2 flex items-center justify-end gap-2">
-          <button type="button" onclick="closePatientModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100">Скасувати</button>
-          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-sm">Створити у хмарі</button>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closePatientModal()" class="px-4 py-2 rounded-xl text-xs text-slate-600 hover:bg-slate-100">Скасувати</button>
+          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white">Створити у хмарі</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: GOOGLE DRIVE CLOUD SETTINGS -->
-  <div id="driveModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden">
-      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-sky-50/60">
-        <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center">
-            <i data-lucide="cloud" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-slate-800 text-base">Google Drive Хмара</h3>
-            <p class="text-xs text-slate-500">Папка /DentVoice_Patients/</p>
-          </div>
-        </div>
-        <button onclick="closeDriveModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="p-5 space-y-4 text-sm">
-        <div id="driveAuthBox" class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
-          <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
-          <div class="text-xs leading-relaxed">
-            <strong>Не підключено до Google Drive.</strong> Натисніть кнопку входу нижче, щоб авторизуватись у Google та дозволити створення папки <code>/DentVoice_Patients/</code>.
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <label class="block text-xs font-semibold text-slate-600 uppercase">Статус хмари</label>
-          <div class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
-            <span class="text-xs font-medium text-slate-700">Директорія: <code class="text-sky-700 font-semibold">/DentVoice_Patients/</code></span>
-            <button onclick="handleGoogleSignIn()" class="px-3 py-1.5 rounded-lg bg-sky-600 text-white text-xs font-semibold hover:bg-sky-700 transition">
-              Підключити Google
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-        <button onclick="closeDriveModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-white hover:bg-slate-900">Готово</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TOAST CONTAINER -->
+  <!-- TOAST -->
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"></div>
 
   <script>
-    /* ==========================================================================
-       DENTAL FORMULAS (FDI) - ADULT & CHILD
-       ========================================================================== */
     const ADULT_UPPER_RIGHT = [18, 17, 16, 15, 14, 13, 12, 11];
     const ADULT_UPPER_LEFT  = [21, 22, 23, 24, 25, 26, 27, 28];
     const ADULT_LOWER_RIGHT = [48, 47, 46, 45, 44, 43, 42, 41];
@@ -255,144 +219,31 @@
     const CHILD_LOWER_RIGHT = [85, 84, 83, 82, 81];
     const CHILD_LOWER_LEFT  = [71, 72, 73, 74, 75];
 
-    const PRIMARY_TEETH_SET = new Set([
-      ...CHILD_UPPER_RIGHT, ...CHILD_UPPER_LEFT,
-      ...CHILD_LOWER_RIGHT, ...CHILD_LOWER_LEFT
-    ]);
-
-    /* ==========================================================================
-       STATE MANAGEMENT & GOOGLE DRIVE API CLIENT
-       ========================================================================== */
     let patients = [];
     let selectedPatientId = null;
-    let activeCategoryFilter = 'all';
-    let modalCategorySelection = 'adult';
-
+    let activeFilter = 'all';
+    let modalCat = 'adult';
     let selectedTeeth = [];
-    let dentitionViewMode = 'adult';
-    let mobileActivePanel = 'workspace';
+    let dentitionMode = 'adult';
     let isRecording = false;
-    let isHandsFreeMode = false;
+    let isHandsFree = false;
     let recognition = null;
-    let speechLang = 'uk-UA';
-    let wakeLockObj = null;
+    let wakeLock = null;
+    let deferredInstallPrompt = null;
 
-    let tokenClient = null;
-    let googleAccessToken = null;
-    let isDriveConnected = false;
-    let driveFolderId = null;
-    let deferredPrompt = null;
-
-    const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+    // Отримуємо збережену URL адресу Google Apps Script
+    let gasBackendUrl = localStorage.getItem('DENTVOICE_GAS_URL') || '';
 
     window.addEventListener('DOMContentLoaded', () => {
-      initGoogleAuthClient();
-      renderPatientsList();
-      renderWorkspace();
-      updateMobileLayout();
-      refreshIcons();
-    });
-
-    // PWA Install Prompt Capture
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const installBtn = document.getElementById('installPwaBtn');
-      if (installBtn) installBtn.classList.remove('hidden');
-    });
-
-    function installPWA() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            showToast('Застосунок встановлюється на пристрій!', 'success');
-          }
-          deferredPrompt = null;
-          document.getElementById('installPwaBtn').classList.add('hidden');
-        });
+      updateCloudStatus();
+      if (gasBackendUrl) {
+        document.getElementById('gasUrlInput').value = gasBackendUrl;
+        loadFromGoogleDrive();
       } else {
-        showToast('Щоб встановити, натисніть "Додати на головний екран" у меню браузера', 'info');
-      }
-    }
-
-    function initGoogleAuthClient() {
-      try {
-        if (typeof google !== 'undefined' && google.accounts) {
-          tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: (response) => {
-              if (response && response.access_token) {
-                googleAccessToken = response.access_token;
-                isDriveConnected = true;
-                updateDriveAuthUI();
-                ensureCloudFolderExists().then(() => {
-                  fetchPatientsFromDrive();
-                });
-                showToast('Успішно підключено до Google Диску!', 'success');
-              }
-            },
-          });
-        }
-      } catch (e) {
-        console.warn('Google Auth init warning:', e);
-      }
-    }
-
-    function handleGoogleSignIn() {
-      if (tokenClient) {
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-      } else {
-        showToast('Підключення до Google Диску...', 'info');
-        setTimeout(() => {
-          googleAccessToken = 'real_simulated_token_' + Date.now();
-          isDriveConnected = true;
-          updateDriveAuthUI();
-          ensureCloudFolderExists().then(() => {
-            fetchPatientsFromDrive();
-          });
-          showToast('Підключено до Google Диску!', 'success');
-        }, 600);
-      }
-    }
-
-    async function ensureCloudFolderExists() {
-      if (!googleAccessToken) return;
-      try {
-        const query = "name = 'DentVoice_Patients' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
-          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-        });
-        const data = await res.json();
-        if (data.files && data.files.length > 0) {
-          driveFolderId = data.files[0].id;
-        } else {
-          const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${googleAccessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              name: 'DentVoice_Patients',
-              mimeType: 'application/vnd.google-apps.folder'
-            })
-          });
-          const folderData = await createRes.json();
-          driveFolderId = folderData.id;
-        }
-      } catch (e) {
-        console.error('Folder creation error:', e);
-      }
-    }
-
-    async function fetchPatientsFromDrive() {
-      if (!googleAccessToken || !driveFolderId) {
+        // Початкові демо-пацієнти якщо Диск ще не підключено
         patients = [
           {
-            id: 'cloud-p-1',
+            id: 'p-1',
             name: 'Коваленко Олена Сергіївна',
             category: 'adult',
             phone: '+380 67 450 22 19',
@@ -401,490 +252,288 @@
             visits: []
           }
         ];
+        selectedPatientId = 'p-1';
         renderPatientsList();
         renderWorkspace();
-        return;
-      }
-
-      showToast('Завантаження пацієнтів з Google Диску...', 'info');
-      try {
-        const query = `'${driveFolderId}' in parents and trashed = false`;
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id, name)`, {
-          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-        });
-        const data = await res.json();
-        if (data.files && data.files.length > 0) {
-          patients = [];
-          for (const file of data.files) {
-            const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
-              headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-            });
-            const patientData = await fileRes.json();
-            if (patientData && patientData.id) {
-              patients.push(patientData);
-            }
-          }
-        }
-        renderPatientsList();
-        renderWorkspace();
-        showToast('Дані успішно синхронізовано з Google Диском', 'success');
-      } catch (e) {
-        showToast('Помилка завантаження з Диску', 'error');
-      }
-    }
-
-    async function savePatientToDriveCloud(patientObj) {
-      showToast('Збереження у папку /DentVoice_Patients/ на Диску...', 'info');
-      
-      const index = patients.findIndex(p => p.id === patientObj.id);
-      if (index >= 0) {
-        patients[index] = patientObj;
-      } else {
-        patients.unshift(patientObj);
-      }
-      renderPatientsList();
-      renderWorkspace();
-
-      if (!googleAccessToken) {
-        showToast('Збережено локально', 'info');
-        return;
-      }
-
-      try {
-        if (!driveFolderId) await ensureCloudFolderExists();
-
-        const fileName = `${patientObj.name.replace(/[^a-zA-Zа-яА-Яіїєґ0-9]/g, '_')}.json`;
-        const fileContent = JSON.stringify(patientObj, null, 2);
-
-        const query = `name = '${fileName}' and '${driveFolderId}' in parents and trashed = false`;
-        const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
-          headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-        });
-        const searchData = await searchRes.json();
-
-        if (searchData.files && searchData.files.length > 0) {
-          const fileId = searchData.files[0].id;
-          await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${googleAccessToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: fileContent
-          });
-        } else {
-          const metadata = {
-            name: fileName,
-            parents: [driveFolderId]
-          };
-          const form = new FormData();
-          form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-          form.append('file', new Blob([fileContent], { type: 'application/json' }));
-
-          await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${googleAccessToken}` },
-            body: form
-          });
-        }
-        showToast('Картку пацієнта успішно збережено на Google Диск!', 'success');
-      } catch (e) {
-        showToast('Помилка збереження у хмару', 'error');
-      }
-    }
-
-    function updateDriveAuthUI() {
-      const dot = document.getElementById('driveDot');
-      const text = document.getElementById('driveStatusText');
-      const authBtn = document.getElementById('googleAuthBtn');
-      const badge = document.getElementById('cloudModeBadge');
-      const authBox = document.getElementById('driveAuthBox');
-
-      if (isDriveConnected) {
-        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-        if (text) text.textContent = 'Google Диск';
-        if (authBtn) {
-          authBtn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i><span>Підключено</span>';
-          authBtn.className = 'flex items-center gap-1 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white shadow-sm';
-        }
-        if (badge) {
-          badge.textContent = 'Google Диск (Хмара)';
-          badge.className = 'text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
-        }
-        if (authBox) {
-          authBox.className = 'p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3';
-          authBox.innerHTML = '<i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i><div class="text-xs"><strong>Підключено до Google Диску.</strong> Папка <code>/DentVoice_Patients/</code> активна.</div>';
-        }
       }
       refreshIcons();
-    }
+    });
 
-    function refreshIcons() {
-      if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
-        try { lucide.createIcons(); } catch (e) {}
-      }
-    }
+    // PWA Install Event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
 
-    function playVoiceBeep(freq = 660, duration = 0.14) {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.value = 0.08;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        setTimeout(() => { osc.stop(); ctx.close(); }, duration * 1000);
-      } catch (e) {}
-    }
-
-    async function requestWakeLock() {
-      if ('wakeLock' in navigator) {
-        try { wakeLockObj = await navigator.wakeLock.request('screen'); } catch (err) {}
-      }
-    }
-
-    async function releaseWakeLock() {
-      if (wakeLockObj) {
-        try { await wakeLockObj.release(); } catch (e) {}
-        wakeLockObj = null;
-      }
-    }
-
-    function updateMobileLayout() {
-      const sidebar = document.getElementById('patientsSidebar');
-      const workspace = document.getElementById('patientWorkspace');
-      if (!sidebar || !workspace) return;
-
-      if (window.innerWidth < 768) {
-        if (mobileActivePanel === 'list') {
-          sidebar.classList.remove('hidden');
-          sidebar.classList.add('flex');
-          workspace.classList.add('hidden');
-          workspace.classList.remove('flex');
-        } else {
-          sidebar.classList.add('hidden');
-          sidebar.classList.remove('flex');
-          workspace.classList.remove('hidden');
-          workspace.classList.add('flex');
-        }
+    function triggerPWAInstall() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(() => {
+          deferredInstallPrompt = null;
+        });
       } else {
-        sidebar.classList.remove('hidden');
-        sidebar.classList.add('flex');
-        workspace.classList.remove('hidden');
-        workspace.classList.add('flex');
+        showToast('Натисніть "Додати на головний екран" у меню браузера', 'info');
       }
     }
 
-    function showMobilePatientList() {
-      mobileActivePanel = 'list';
-      updateMobileLayout();
-    }
-
-    window.addEventListener('resize', updateMobileLayout);
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function calculateAge(dobString) {
-      if (!dobString) return null;
-      const dob = new Date(dobString);
-      if (isNaN(dob.getTime())) return null;
-      const diff = Date.now() - dob.getTime();
-      return Math.abs(new Date(diff).getUTCFullYear() - 1970);
-    }
-
-    function formatToothBadge(toothNum) {
-      const isPrimary = PRIMARY_TEETH_SET.has(Number(toothNum));
-      if (isPrimary) {
-        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">#${toothNum} <span class="text-[10px] font-medium">(мол.)</span></span>`;
+    function updateCloudStatus() {
+      const badge = document.getElementById('cloudStatusBadge');
+      if (gasBackendUrl) {
+        badge.textContent = 'Google Диск: Підключено';
+        badge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+      } else {
+        badge.textContent = 'Диск: Не налаштовано';
+        badge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200';
       }
-      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200">#${toothNum}</span>`;
     }
 
-    function setCategoryFilter(category) {
-      activeCategoryFilter = category;
-      ['all', 'adult', 'child'].forEach(cat => {
-        const btn = document.getElementById('filter-' + cat);
-        if (!btn) return;
-        if (cat === category) {
-          btn.className = 'py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm font-semibold flex items-center justify-center gap-1';
-        } else {
-          btn.className = 'py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1';
+    function saveGasUrl() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      if (!url) return;
+      gasBackendUrl = url;
+      localStorage.setItem('DENTVOICE_GAS_URL', url);
+      updateCloudStatus();
+      closeDriveModal();
+      showToast('Google Диск успішно налаштовано!', 'success');
+      loadFromGoogleDrive();
+    }
+
+    // Хмарне завантаження з Google Диску
+    async function loadFromGoogleDrive() {
+      if (!gasBackendUrl) {
+        showToast('Вкажіть посилання на скрипт Google Диску в налаштуваннях', 'info');
+        return;
+      }
+      showToast('Завантаження з Google Диску...', 'info');
+      try {
+        const res = await fetch(gasBackendUrl + '?action=getPatients');
+        const data = await res.json();
+        if (data.status === 'success' && data.patients) {
+          patients = data.patients;
+          if (patients.length && !selectedPatientId) selectedPatientId = patients[0].id;
+          renderPatientsList();
+          renderWorkspace();
+          showToast('Дані успішно завантажено з Google Диску', 'success');
         }
-      });
-      renderPatientsList();
+      } catch (e) {
+        showToast('Помилка підключення до Google Диску', 'error');
+      }
     }
 
-    function clearSearch() {
-      document.getElementById('searchInput').value = '';
-      renderPatientsList();
+    // Хмарне збереження на Google Диск
+    async function saveToGoogleDrive(patient) {
+      if (!gasBackendUrl) {
+        showToast('Збережено локально. Підключіть Google Диск у шапці!', 'info');
+        return;
+      }
+      showToast('Збереження у папку /DentVoice_Patients/...', 'info');
+      try {
+        await fetch(gasBackendUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'savePatient', patient: patient })
+        });
+        showToast('Успішно збережено на Google Диск!', 'success');
+      } catch (e) {
+        showToast('Помилка збереження на Google Диск', 'error');
+      }
     }
 
     function renderPatientsList() {
       const container = document.getElementById('patientsListContainer');
       const query = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
-      const clearBtn = document.getElementById('clearSearchBtn');
-      if (clearBtn) clearBtn.classList.toggle('hidden', query.length === 0);
 
       document.getElementById('count-all').textContent = `(${patients.length})`;
       document.getElementById('count-adult').textContent = `(${patients.filter(p => p.category !== 'child').length})`;
       document.getElementById('count-child').textContent = `(${patients.filter(p => p.category === 'child').length})`;
 
       const filtered = patients.filter(p => {
-        const cat = p.category || 'adult';
-        if (activeCategoryFilter !== 'all' && cat !== activeCategoryFilter) return false;
+        if (activeFilter !== 'all' && (p.category || 'adult') !== activeFilter) return false;
         if (!query) return true;
-        return (p.name || '').toLowerCase().includes(query) || (p.phone || '').toLowerCase().includes(query);
+        return (p.name || '').toLowerCase().includes(query) || (p.phone || '').includes(query);
       });
 
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="p-6 text-center text-slate-400">
-            <p class="text-sm font-medium text-slate-600">Пацієнтів не знайдено</p>
-          </div>
-        `;
+      if (!filtered.length) {
+        container.innerHTML = '<div class="p-6 text-center text-slate-400 text-xs">Пацієнтів не знайдено</div>';
         return;
       }
 
-      container.innerHTML = filtered.map(p => {
-        const isSelected = p.id === selectedPatientId;
-        const isChild = p.category === 'child';
-        return `
-          <div onclick="selectPatient('${p.id}')" class="p-3 cursor-pointer transition hover:bg-slate-50 ${isSelected ? 'bg-sky-50/70 border-l-4 border-l-sky-600' : ''}">
-            <div class="flex items-start justify-between gap-2">
-              <div class="font-semibold text-xs sm:text-sm text-slate-900 leading-snug truncate">${escapeHtml(p.name)}</div>
-              ${isChild
-                ? `<span class="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">Дитина</span>`
-                : `<span class="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">Дорослий</span>`
-              }
-            </div>
-            <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500">
-              <span>${escapeHtml(p.phone || 'Без тел.')}</span>
-              <span>Візитів: <strong>${(p.visits || []).length}</strong></span>
-            </div>
+      container.innerHTML = filtered.map(p => `
+        <div onclick="selectPatient('${p.id}')" class="p-3 cursor-pointer hover:bg-slate-50 transition ${p.id === selectedPatientId ? 'bg-sky-50 border-l-4 border-sky-600' : ''}">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs sm:text-sm text-slate-900 truncate">${p.name}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full ${p.category === 'child' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">
+              ${p.category === 'child' ? '🧸' : '🧑'}
+            </span>
           </div>
-        `;
-      }).join('');
+          <div class="text-[11px] text-slate-500 mt-1 flex justify-between">
+            <span>${p.phone || 'Без тел.'}</span>
+            <span>Візитів: ${(p.visits || []).length}</span>
+          </div>
+        </div>
+      `).join('');
     }
 
     function selectPatient(id) {
-      if (isRecording) stopVoiceRecording();
+      if (isRecording) stopRecording();
       selectedPatientId = id;
-      const patient = patients.find(p => p.id === id);
       selectedTeeth = [];
-      mobileActivePanel = 'workspace';
-      if (patient) {
-        dentitionViewMode = patient.category === 'child' ? 'child' : 'adult';
+      const p = patients.find(x => x.id === id);
+      if (p) dentitionMode = p.category === 'child' ? 'child' : 'adult';
+      
+      if (window.innerWidth < 768) {
+        document.getElementById('patientsSidebar').classList.add('hidden');
+        document.getElementById('patientWorkspace').classList.remove('hidden');
       }
       renderPatientsList();
       renderWorkspace();
-      updateMobileLayout();
-      refreshIcons();
+    }
+
+    function showMobileList() {
+      document.getElementById('patientsSidebar').classList.remove('hidden');
+      document.getElementById('patientWorkspace').classList.add('hidden');
     }
 
     function renderWorkspace() {
       const container = document.getElementById('patientWorkspace');
-      const patient = patients.find(p => p.id === selectedPatientId);
-
-      if (!patient) {
-        container.innerHTML = `
-          <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
-            <div class="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3">
-              <i data-lucide="cloud" class="w-7 h-7"></i>
-            </div>
-            <h2 class="text-base font-bold text-slate-800">Оберіть пацієнта з Google Диску</h2>
-          </div>
-        `;
-        refreshIcons();
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) {
+        container.innerHTML = '<div class="flex-1 flex items-center justify-center text-slate-400 text-xs">Оберіть пацієнта</div>';
         return;
       }
 
-      const isChild = patient.category === 'child';
-      const age = calculateAge(patient.dob);
-
       container.innerHTML = `
-        <div class="p-3 sm:p-5 max-w-4xl w-full mx-auto space-y-4">
-          <div class="md:hidden no-print flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200">
-            <button onclick="showMobilePatientList()" class="flex items-center gap-1 text-xs font-semibold text-sky-700">
-              <i data-lucide="arrow-left" class="w-4 h-4"></i>
-              <span>Усі пацієнти</span>
+        <div class="p-3 sm:p-5 max-w-4xl w-full mx-auto space-y-3.5">
+          <div class="md:hidden flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200">
+            <button onclick="showMobileList()" class="flex items-center gap-1 text-xs font-semibold text-sky-700">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> Усі пацієнти
             </button>
-            <span class="text-xs text-slate-500 font-medium truncate max-w-[170px]">${escapeHtml(patient.name)}</span>
+            <span class="text-xs text-slate-500 truncate max-w-[180px]">${p.name}</span>
           </div>
 
-          <section class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs flex flex-col gap-2.5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${isChild ? 'bg-amber-100 text-amber-700' : 'bg-sky-50 text-sky-700'}">
-                  ${isChild ? '🧸' : '🧑'}
-                </div>
-                <div>
-                  <h2 class="text-sm sm:text-base font-bold text-slate-900 leading-snug">${escapeHtml(patient.name)}</h2>
-                  <div class="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                    <span>📞 ${escapeHtml(patient.phone || 'Не вказано')}</span>
-                    <span>🎂 ${patient.dob ? `${patient.dob} (${age} р.)` : 'Вік не вказано'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="text-[11px] text-rose-600 font-medium bg-rose-50 px-2.5 py-1 rounded-lg">
-              ⚠️ Алергоанамнез: ${escapeHtml(patient.allergies || 'Без особливостей')}
-            </div>
-          </section>
-
-          <section class="no-print bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-            <div class="px-3.5 sm:px-4 py-3 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <!-- Header -->
+          <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+            <div>
               <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
-                <h3 class="font-bold text-xs sm:text-sm">Голосовий прийом у хмару</h3>
+                <h2 class="text-sm sm:text-base font-bold text-slate-900">${p.name}</h2>
+                <span class="text-[10px] px-2 py-0.5 rounded-full ${p.category === 'child' ? 'bg-amber-100 text-amber-800' : 'bg-sky-50 text-sky-800'}">
+                  ${p.category === 'child' ? '🧸 Дитина' : '🧑 Дорослий'}
+                </span>
               </div>
-              <div class="grid grid-cols-3 bg-black/30 p-0.5 rounded-lg text-[10px] sm:text-[11px]">
-                <button type="button" onclick="setDentitionView('adult')" class="px-2 py-1 rounded font-medium transition ${dentitionViewMode === 'adult' ? 'bg-teal-500 text-white' : 'text-slate-200'}">🧑 Доросла</button>
-                <button type="button" onclick="setDentitionView('child')" class="px-2 py-1 rounded font-medium transition ${dentitionViewMode === 'child' ? 'bg-amber-400 text-slate-950 font-semibold' : 'text-slate-200'}">🧸 Дитяча</button>
-                <button type="button" onclick="setDentitionView('mixed')" class="px-2 py-1 rounded font-medium transition ${dentitionViewMode === 'mixed' ? 'bg-sky-500 text-white' : 'text-slate-200'}">🔄 Змінний</button>
+              <div class="text-[11px] text-slate-500 mt-1 flex gap-3">
+                <span>📞 ${p.phone || 'Не вказано'}</span>
+                <span>🎂 ${p.dob || 'Вік не вказано'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visit Panel -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-3.5 py-2.5 bg-slate-900 text-white flex items-center justify-between">
+              <h3 class="text-xs sm:text-sm font-bold">Голосовий прийом</h3>
+              <div class="flex gap-1 text-[10px]">
+                <button onclick="setDentitionMode('adult')" class="px-2 py-1 rounded ${dentitionMode === 'adult' ? 'bg-teal-500 text-white font-bold' : 'text-slate-300'}">Доросла</button>
+                <button onclick="setDentitionMode('child')" class="px-2 py-1 rounded ${dentitionMode === 'child' ? 'bg-amber-400 text-slate-950 font-bold' : 'text-slate-300'}">Дитяча</button>
+                <button onclick="setDentitionMode('mixed')" class="px-2 py-1 rounded ${dentitionMode === 'mixed' ? 'bg-sky-500 text-white font-bold' : 'text-slate-300'}">Змінний</button>
               </div>
             </div>
 
-            <div class="p-3.5 sm:p-4 space-y-4">
-              <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[11px] font-bold text-slate-500">Зубна формула FDI:</span>
-                  <span class="text-[11px] font-semibold text-teal-700">${selectedTeeth.length ? 'Обрано: ' + selectedTeeth.map(t => '#' + t).join(', ') : 'Оберіть зуби'}</span>
+            <div class="p-3.5 sm:p-4 space-y-3.5">
+              <!-- Dental Chart -->
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <div class="flex justify-between text-[11px] font-bold mb-1">
+                  <span class="text-slate-500">Зубна формула FDI:</span>
+                  <span class="text-teal-700">${selectedTeeth.length ? 'Обрано: #' + selectedTeeth.join(', #') : 'Оберіть зуби'}</span>
                 </div>
                 <div class="overflow-x-auto pb-1">${renderDentalChartHTML()}</div>
               </div>
 
-              <div class="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-3.5 py-2.5">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0">
-                    <i data-lucide="mic-2" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <div class="text-xs font-bold text-purple-900">Режим "Вільні руки" (Команди)</div>
-                    <p class="text-[10px] text-purple-700">Скажіть: «Почати запис», «Закінчити запис», «Зберегти запис»</p>
-                  </div>
+              <!-- Hands free toggle -->
+              <div class="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-3 py-2">
+                <div>
+                  <div class="text-xs font-bold text-purple-900">Режим "Вільні руки" (Команди)</div>
+                  <div class="text-[10px] text-purple-700">«Почати запис», «Закінчити запис», «Зберегти запис»</div>
                 </div>
-                <button type="button" onclick="toggleHandsFreeMode()" id="handsFreeToggleBtn" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${isHandsFreeMode ? 'bg-purple-600 text-white shadow-sm' : 'bg-white border border-purple-300 text-purple-700'}">
-                  ${isHandsFreeMode ? 'Увімкнено' : 'Вимкнено'}
+                <button onclick="toggleHandsFree()" id="hfBtn" class="px-3 py-1 rounded-lg text-xs font-bold ${isHandsFree ? 'bg-purple-600 text-white' : 'bg-white text-purple-700 border border-purple-300'}">
+                  ${isHandsFree ? 'Увімкнено' : 'Вимкнено'}
                 </button>
               </div>
 
-              <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-                <div class="lg:col-span-4 bg-slate-50 rounded-xl p-3 border border-slate-200 flex flex-col items-center text-center">
-                  <button type="button" id="recordVoiceBtn" onclick="toggleVoiceRecording()" class="w-16 h-16 rounded-full flex items-center justify-center transition shadow-md cursor-pointer ${isRecording ? 'bg-rose-600 text-white recording-pulse' : 'bg-gradient-to-br from-sky-500 to-teal-600 text-white'}">
+              <!-- Voice Button & Form -->
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div class="sm:col-span-4 flex flex-col items-center">
+                  <button onclick="toggleVoice()" id="micBtn" class="w-16 h-16 rounded-full flex items-center justify-center text-white ${isRecording ? 'bg-rose-600 recording-pulse' : 'bg-gradient-to-br from-sky-500 to-teal-600 shadow-md'}">
                     <i data-lucide="${isRecording ? 'square' : 'mic'}" class="w-6 h-6"></i>
                   </button>
-                  <p class="mt-2 text-[11px] font-semibold ${isRecording ? 'text-rose-600' : 'text-slate-700'}">
-                    ${isRecording ? '🔴 Запис голосу...' : 'Натисніть для диктування'}
-                  </p>
+                  <span class="text-[10px] mt-1.5 font-semibold ${isRecording ? 'text-rose-600' : 'text-slate-500'}">
+                    ${isRecording ? 'Йде диктування...' : 'Натисніть для запису'}
+                  </span>
                 </div>
 
-                <div class="lg:col-span-8 space-y-2.5">
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div class="sm:col-span-2">
-                      <label class="block text-[11px] font-semibold text-slate-600 mb-1">Діагноз / Заголовок</label>
-                      <input id="visitDiagnosisInput" type="text" placeholder="Напр.: Карієс #36" class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm" />
-                    </div>
-                    <div>
-                      <label class="block text-[11px] font-semibold text-slate-600 mb-1">Дата</label>
-                      <input id="visitDateInput" type="datetime-local" value="${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}" class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm" />
-                    </div>
-                  </div>
-                  <div>
-                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Протокол лікування</label>
-                    <textarea id="visitNotesInput" rows="3" placeholder="Текст диктується голосом..." class="w-full p-3 rounded-xl border border-slate-200 text-xs sm:text-sm"></textarea>
-                  </div>
-
-                  <div class="flex items-center justify-end pt-1">
-                    <button type="button" onclick="saveNewVisit()" class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs sm:text-sm shadow-md flex items-center gap-1.5">
-                      <i data-lucide="cloud-upload" class="w-4 h-4"></i>
-                      <span>Зберегти прийом на Google Диск</span>
+                <div class="sm:col-span-8 space-y-2">
+                  <input id="vDiag" type="text" placeholder="Діагноз (напр.: Карієс #36)" class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none" />
+                  <textarea id="vNotes" rows="3" placeholder="Протокол лікування диктується голосом..." class="w-full p-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none"></textarea>
+                  <div class="flex justify-end">
+                    <button onclick="saveCurrentVisit()" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-xs flex items-center gap-1.5">
+                      <i data-lucide="cloud-upload" class="w-4 h-4"></i> Зберегти на Google Диск
                     </button>
                   </div>
                 </div>
               </div>
             </div>
-          </section>
+          </div>
 
-          <section class="space-y-2.5 pb-10">
-            <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
-              <i data-lucide="history" class="w-4 h-4 text-sky-600"></i>
-              <span>Історія прийомів з Google Диску (${(patient.visits || []).length})</span>
-            </h3>
-            ${(patient.visits || []).length === 0 ? `
-              <div class="bg-white rounded-2xl p-6 text-center border border-slate-200 text-slate-400 text-xs">Історія порожня.</div>
-            ` : (patient.visits || []).map(v => `
-              <article class="bg-white rounded-xl p-3.5 border border-slate-200 space-y-1.5">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                  <div class="flex flex-wrap items-center gap-1.5">
-                    ${(v.teeth || []).map(t => formatToothBadge(t)).join('')}
-                    <h4 class="font-bold text-slate-900 text-xs sm:text-sm">${escapeHtml(v.diagnosis)}</h4>
+          <!-- History -->
+          <div class="space-y-2 pb-10">
+            <h4 class="font-bold text-xs text-slate-700">Історія прийомів (${(p.visits || []).length})</h4>
+            ${!(p.visits || []).length ? '<div class="bg-white p-4 rounded-xl border border-slate-200 text-center text-xs text-slate-400">Історія порожня</div>' : 
+              p.visits.map(v => `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                  <div class="flex justify-between font-bold text-slate-800 border-b pb-1">
+                    <span>${v.diagnosis}</span>
+                    <span class="text-[10px] text-slate-400 font-normal">${v.date}</span>
                   </div>
-                  <span class="text-[10px] text-slate-400">${formatVisitDate(v.date)}</span>
+                  <p class="text-slate-600">${v.notes}</p>
                 </div>
-                <p class="text-xs sm:text-sm text-slate-700">${escapeHtml(v.notes)}</p>
-              </article>
-            `).join('')}
-          </section>
+              `).join('')}
+          </div>
         </div>
       `;
       refreshIcons();
     }
 
-    function renderToothButton(num, isPrimary) {
-      const isSelected = selectedTeeth.includes(num);
-      const baseClasses = isPrimary
-        ? (isSelected ? 'bg-amber-500 text-slate-950 border-amber-600 ring-2 ring-amber-300 font-bold' : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300')
-        : (isSelected ? 'bg-sky-600 text-white border-sky-700 ring-2 ring-sky-300 font-bold' : 'bg-white hover:bg-sky-50 text-slate-700 border-slate-200');
-
-      return `
-        <button type="button" onclick="toggleToothSelection(${num})" class="tooth-btn w-7 h-8 sm:w-8 sm:h-9 rounded-lg border text-[11px] flex flex-col items-center justify-center shrink-0 cursor-pointer ${baseClasses}">
-          <span class="font-bold">${num}</span>
-        </button>
-      `;
-    }
-
     function renderDentalChartHTML() {
-      const showAdult = dentitionViewMode === 'adult' || dentitionViewMode === 'mixed';
-      const showChild = dentitionViewMode === 'child' || dentitionViewMode === 'mixed';
+      const showAdult = dentitionMode === 'adult' || dentitionMode === 'mixed';
+      const showChild = dentitionMode === 'child' || dentitionMode === 'mixed';
       let html = '';
 
       if (showAdult) {
         html += `
           <div class="space-y-1">
-            <div class="text-[10px] font-semibold text-slate-500">🧑 Постійні (11–48)</div>
-            <div class="flex items-center justify-center gap-1 min-w-max">
-              <div class="flex gap-1 pr-2 border-r-2 border-slate-300">${ADULT_UPPER_RIGHT.map(n => renderToothButton(n, false)).join('')}</div>
-              <div class="flex gap-1 pl-2">${ADULT_UPPER_LEFT.map(n => renderToothButton(n, false)).join('')}</div>
+            <div class="text-[10px] font-semibold text-slate-500">🧑 Постійні</div>
+            <div class="flex justify-center gap-1 min-w-max">
+              <div class="flex gap-1 pr-1.5 border-r border-slate-300">${ADULT_UPPER_RIGHT.map(n => renderTooth(n, false)).join('')}</div>
+              <div class="flex gap-1 pl-1.5">${ADULT_UPPER_LEFT.map(n => renderTooth(n, false)).join('')}</div>
             </div>
-            <div class="flex items-center justify-center gap-1 min-w-max pt-1 border-t border-slate-200">
-              <div class="flex gap-1 pr-2 border-r-2 border-slate-300">${ADULT_LOWER_RIGHT.map(n => renderToothButton(n, false)).join('')}</div>
-              <div class="flex gap-1 pl-2">${ADULT_LOWER_LEFT.map(n => renderToothButton(n, false)).join('')}</div>
+            <div class="flex justify-center gap-1 min-w-max pt-1 border-t border-slate-200">
+              <div class="flex gap-1 pr-1.5 border-r border-slate-300">${ADULT_LOWER_RIGHT.map(n => renderTooth(n, false)).join('')}</div>
+              <div class="flex gap-1 pl-1.5">${ADULT_LOWER_LEFT.map(n => renderTooth(n, false)).join('')}</div>
             </div>
           </div>
         `;
       }
-
       if (showChild) {
         html += `
-          <div class="space-y-1 ${showAdult ? 'pt-2.5 border-t border-dashed border-amber-300' : ''}">
-            <div class="text-[10px] font-semibold text-amber-800">🧸 Молочні (51–85)</div>
-            <div class="flex items-center justify-center gap-1 min-w-max">
-              <div class="flex gap-1 pr-2.5 border-r-2 border-amber-400">${CHILD_UPPER_RIGHT.map(n => renderToothButton(n, true)).join('')}</div>
-              <div class="flex gap-1 pl-2.5">${CHILD_UPPER_LEFT.map(n => renderToothButton(n, true)).join('')}</div>
+          <div class="space-y-1 ${showAdult ? 'pt-2 border-t border-dashed border-amber-300' : ''}">
+            <div class="text-[10px] font-semibold text-amber-800">🧸 Молочні</div>
+            <div class="flex justify-center gap-1 min-w-max">
+              <div class="flex gap-1 pr-1.5 border-r border-amber-400">${CHILD_UPPER_RIGHT.map(n => renderTooth(n, true)).join('')}</div>
+              <div class="flex gap-1 pl-1.5">${CHILD_UPPER_LEFT.map(n => renderTooth(n, true)).join('')}</div>
             </div>
-            <div class="flex items-center justify-center gap-1 min-w-max pt-1 border-t border-amber-200">
-              <div class="flex gap-1 pr-2.5 border-r-2 border-amber-400">${CHILD_LOWER_RIGHT.map(n => renderToothButton(n, true)).join('')}</div>
-              <div class="flex gap-1 pl-2.5">${CHILD_LOWER_LEFT.map(n => renderToothButton(n, true)).join('')}</div>
+            <div class="flex justify-center gap-1 min-w-max pt-1 border-t border-amber-200">
+              <div class="flex gap-1 pr-1.5 border-r border-amber-400">${CHILD_LOWER_RIGHT.map(n => renderTooth(n, true)).join('')}</div>
+              <div class="flex gap-1 pl-1.5">${CHILD_LOWER_LEFT.map(n => renderTooth(n, true)).join('')}</div>
             </div>
           </div>
         `;
@@ -892,277 +541,184 @@
       return html;
     }
 
-    function setDentitionView(mode) {
-      dentitionViewMode = mode;
-      preserveFormAndRerender();
+    function renderTooth(num, isPrimary) {
+      const sel = selectedTeeth.includes(num);
+      return `
+        <button type="button" onclick="toggleTooth(${num})" class="tooth-btn w-7 h-8 rounded-lg border text-[11px] font-bold flex items-center justify-center shrink-0 ${sel ? (isPrimary ? 'bg-amber-500 text-slate-950 border-amber-600' : 'bg-sky-600 text-white border-sky-700') : (isPrimary ? 'bg-amber-50 text-amber-900 border-amber-300' : 'bg-white text-slate-700 border-slate-200')}">
+          ${num}
+        </button>
+      `;
     }
 
-    function toggleToothSelection(toothNum) {
-      const idx = selectedTeeth.indexOf(toothNum);
+    function toggleTooth(num) {
+      const idx = selectedTeeth.indexOf(num);
       if (idx >= 0) selectedTeeth.splice(idx, 1);
-      else selectedTeeth.push(toothNum);
-      preserveFormAndRerender();
-    }
-
-    function preserveFormAndRerender() {
-      const diag = document.getElementById('visitDiagnosisInput')?.value || '';
-      const notes = document.getElementById('visitNotesInput')?.value || '';
+      else selectedTeeth.push(num);
       renderWorkspace();
-      if (document.getElementById('visitDiagnosisInput')) document.getElementById('visitDiagnosisInput').value = diag;
-      if (document.getElementById('visitNotesInput')) document.getElementById('visitNotesInput').value = notes;
     }
 
-    function toggleHandsFreeMode() {
-      isHandsFreeMode = !isHandsFreeMode;
-      const btn = document.getElementById('handsFreeToggleBtn');
-      if (btn) {
-        if (isHandsFreeMode) {
-          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white shadow-sm';
-          btn.textContent = 'Увімкнено';
-          requestWakeLock();
-          showToast('Режим "Вільні руки" увімкнено', 'success');
-          startContinuousHandsFreeListening();
-        } else {
-          btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white border border-purple-300 text-purple-700';
-          btn.textContent = 'Вимкнено';
-          releaseWakeLock();
-          stopVoiceRecording();
-          showToast('Режим "Вільні руки" вимкнено', 'info');
+    function setDentitionMode(m) {
+      dentitionMode = m;
+      renderWorkspace();
+    }
+
+    /* Hands-free & Speech */
+    async function toggleHandsFree() {
+      isHandsFree = !isHandsFree;
+      if (isHandsFree) {
+        if ('wakeLock' in navigator) {
+          try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
         }
+        startListening();
+        showToast('Режим "Вільні руки" активовано', 'success');
+      } else {
+        if (wakeLock) { wakeLock.release(); wakeLock = null; }
+        stopRecording();
+        showToast('Режим "Вільні руки" вимкнено', 'info');
       }
+      renderWorkspace();
     }
 
-    function startContinuousHandsFreeListening() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        showToast('Браузер не підтримує розпізнавання мови', 'error');
-        return;
-      }
-      try {
-        if (recognition) { try { recognition.stop(); } catch(e){} }
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = speechLang;
+    function startListening() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+      if (recognition) { try { recognition.stop(); } catch(e){} }
+      recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'uk-UA';
 
-        recognition.onresult = (event) => {
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            const transcript = event.results[i][0].transcript.trim().toLowerCase();
-            if (event.results[i].isFinal) {
-              if (transcript.includes('почати запис') || transcript.includes('старт запис')) {
-                if (!isRecording) startVoiceRecording();
-                return;
-              }
-              if (transcript.includes('закінчити запис') || transcript.includes('стоп запис')) {
-                if (isRecording) stopVoiceRecording();
-                return;
-              }
-              if (transcript.includes('зберегти запис')) {
-                if (isRecording) stopVoiceRecording();
-                saveNewVisit();
-                return;
-              }
-
-              if (isRecording) {
-                const notesEl = document.getElementById('visitNotesInput');
-                if (notesEl) {
-                  notesEl.value = (notesEl.value ? notesEl.value.trim() + ' ' : '') + event.results[i][0].transcript.trim() + '. ';
-                  autoDetectTeethFromVoice(event.results[i][0].transcript);
+      recognition.onresult = (e) => {
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+          if (e.results[i].isFinal) {
+            const text = e.results[i][0].transcript.trim().toLowerCase();
+            if (text.includes('почати запис') || text.includes('старт запис')) {
+              isRecording = true;
+              renderWorkspace();
+              return;
+            }
+            if (text.includes('закінчити запис') || text.includes('стоп запис')) {
+              isRecording = false;
+              renderWorkspace();
+              return;
+            }
+            if (text.includes('зберегти запис')) {
+              saveCurrentVisit();
+              return;
+            }
+            if (isRecording) {
+              const el = document.getElementById('vNotes');
+              if (el) {
+                el.value = (el.value ? el.value.trim() + ' ' : '') + e.results[i][0].transcript.trim() + '. ';
+                const teethMatch = text.match(/\b([1-4][1-8]|[5-8][1-5])\b/g);
+                if (teethMatch) {
+                  teethMatch.forEach(t => {
+                    const tn = Number(t);
+                    if (!selectedTeeth.includes(tn)) selectedTeeth.push(tn);
+                  });
+                  renderWorkspace();
                 }
               }
             }
           }
-        };
-
-        recognition.onend = () => {
-          if (isHandsFreeMode) {
-            try { recognition.start(); } catch(e){}
-          }
-        };
-
-        recognition.start();
-      } catch (e) {}
-    }
-
-    function initSpeechRecognition() {
-      if (isHandsFreeMode) return;
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) return;
-      recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = speechLang;
-
-      recognition.onresult = (event) => {
-        const notesEl = document.getElementById('visitNotesInput');
-        if (!notesEl) return;
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
-        }
-        if (finalTranscript) {
-          notesEl.value = (notesEl.value ? notesEl.value.trim() + ' ' : '') + finalTranscript.trim() + '. ';
-          autoDetectTeethFromVoice(finalTranscript);
         }
       };
-      recognition.onerror = () => stopVoiceRecording();
+
+      recognition.onend = () => {
+        if (isHandsFree) { try { recognition.start(); } catch(e){} }
+      };
+      recognition.start();
     }
 
-    function autoDetectTeethFromVoice(text) {
-      const matches = text.match(/\b([1-4][1-8]|[5-8][1-5])\b/g);
-      if (matches) {
-        matches.forEach(m => {
-          const num = Number(m);
-          if (!selectedTeeth.includes(num)) selectedTeeth.push(num);
-        });
-        preserveFormAndRerender();
-      }
+    function toggleVoice() {
+      if (isRecording) stopRecording();
+      else startRecording();
     }
 
-    function toggleVoiceRecording() {
-      if (isRecording) stopVoiceRecording();
-      else startVoiceRecording();
+    function startRecording() {
+      isRecording = true;
+      if (!isHandsFree) startListening();
+      renderWorkspace();
     }
 
-    function startVoiceRecording() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        showToast('Браузер не підтримує розпізнавання мови', 'error');
-        return;
-      }
-      if (!isHandsFreeMode && !recognition) initSpeechRecognition();
-      try {
-        isRecording = true;
-        playVoiceBeep(880, 0.14);
-        if (!isHandsFreeMode) {
-          recognition.start();
-        }
-        preserveFormAndRerender();
-        showToast('Диктуйте опис прийому...', 'success');
-      } catch (e) {}
-    }
-
-    function stopVoiceRecording() {
+    function stopRecording() {
       isRecording = false;
-      playVoiceBeep(440, 0.15);
-      if (!isHandsFreeMode && recognition) { try { recognition.stop(); } catch(e){} }
-      preserveFormAndRerender();
-      showToast('Запис зупинено', 'info');
+      if (!isHandsFree && recognition) { try { recognition.stop(); } catch(e){} }
+      renderWorkspace();
     }
 
-    function saveNewVisit() {
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (!patient) return;
-
-      const diagnosis = (document.getElementById('visitDiagnosisInput')?.value || '').trim();
-      const notes = (document.getElementById('visitNotesInput')?.value || '').trim();
-      const dateVal = document.getElementById('visitDateInput')?.value || new Date().toISOString();
-
-      if (!diagnosis && !notes && selectedTeeth.length === 0) {
-        showToast('Введіть або надиктуйте опис прийому', 'error');
-        return;
-      }
-
-      if (isRecording) stopVoiceRecording();
+    function saveCurrentVisit() {
+      const p = patients.find(x => x.id === selectedPatientId);
+      if (!p) return;
+      const diag = (document.getElementById('vDiag')?.value || '').trim();
+      const notes = (document.getElementById('vNotes')?.value || '').trim();
 
       const newVisit = {
         id: 'v-' + Date.now(),
-        date: dateVal,
+        date: new Date().toLocaleDateString('uk-UA') + ' ' + new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
         teeth: [...selectedTeeth],
-        diagnosis: diagnosis || `Лікування зубів ${selectedTeeth.map(t => '#' + t).join(', ')}`,
-        notes: notes || 'Проведено лікування згідно з протоколом.',
+        diagnosis: diag || ('Лікування #' + selectedTeeth.join(', #')),
+        notes: notes || 'Проведено лікування згідно з протоколом.'
       };
 
-      patient.visits = [newVisit, ...(patient.visits || [])];
+      p.visits = [newVisit, ...(p.visits || [])];
       selectedTeeth = [];
+      isRecording = false;
 
-      savePatientToDriveCloud(patient);
+      renderWorkspace();
+      saveToGoogleDrive(p);
     }
 
-    function openPatientModal() {
-      const modal = document.getElementById('patientModal');
-      document.getElementById('formPatientId').value = '';
-      document.getElementById('formPatientName').value = '';
-      document.getElementById('formPatientPhone').value = '';
-      document.getElementById('formPatientDob').value = '';
-      document.getElementById('formPatientAllergies').value = '';
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closePatientModal() {
-      document.getElementById('patientModal').classList.add('hidden');
-      document.getElementById('patientModal').classList.remove('flex');
-    }
-
-    function setModalPatientCategory(cat) {
-      modalCategorySelection = cat;
-      const btnAdult = document.getElementById('modalBtnAdult');
-      const btnChild = document.getElementById('modalBtnChild');
-      if (cat === 'child') {
-        btnChild.className = 'py-2 px-3 rounded-xl border-2 border-amber-500 bg-amber-50 text-amber-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-        btnAdult.className = 'py-2 px-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-      } else {
-        btnAdult.className = 'py-2 px-3 rounded-xl border-2 border-teal-600 bg-teal-50/70 text-teal-900 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-        btnChild.className = 'py-2 px-3 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2';
-      }
-    }
-
-    function autoDetectAgeCategory(dobVal) {
-      const age = calculateAge(dobVal);
-      if (age !== null) setModalPatientCategory(age < 16 ? 'child' : 'adult');
-    }
-
-    function savePatientForm(event) {
-      event.preventDefault();
-      const name = document.getElementById('formPatientName').value.trim();
-      const phone = document.getElementById('formPatientPhone').value.trim();
-      const dob = document.getElementById('formPatientDob').value;
-      const allergies = document.getElementById('formPatientAllergies').value.trim() || 'Без особливостей';
-
+    function savePatientForm(e) {
+      e.preventDefault();
+      const name = document.getElementById('formName').value.trim();
       if (!name) return;
-
-      const newPatient = {
-        id: 'cloud-p-' + Date.now(),
+      const newP = {
+        id: 'p-' + Date.now(),
         name,
-        category: modalCategorySelection,
-        phone,
-        dob,
-        allergies,
+        category: modalCat,
+        phone: document.getElementById('formPhone').value.trim(),
+        dob: document.getElementById('formDob').value,
+        allergies: document.getElementById('formAllergies').value.trim() || 'Без особливостей',
         visits: []
       };
-
+      patients.unshift(newP);
+      selectedPatientId = newP.id;
       closePatientModal();
-      savePatientToDriveCloud(newPatient);
-      selectedPatientId = newPatient.id;
+      renderPatientsList();
+      renderWorkspace();
+      saveToGoogleDrive(newP);
     }
 
-    function openDriveModal() {
-      document.getElementById('driveModal').classList.remove('hidden');
-      document.getElementById('driveModal').classList.add('flex');
+    function setModalCategory(c) {
+      modalCat = c;
+      document.getElementById('mBtnAdult').className = c === 'adult' ? 'py-2 rounded-xl border-2 border-teal-600 bg-teal-50 text-teal-900 font-bold text-xs' : 'py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-bold text-xs';
+      document.getElementById('mBtnChild').className = c === 'child' ? 'py-2 rounded-xl border-2 border-amber-500 bg-amber-50 text-amber-950 font-bold text-xs' : 'py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-700 font-bold text-xs';
     }
 
-    function closeDriveModal() {
-      document.getElementById('driveModal').classList.add('hidden');
-      document.getElementById('driveModal').classList.remove('flex');
+    function openPatientModal() { document.getElementById('patientModal').classList.replace('hidden', 'flex'); }
+    function closePatientModal() { document.getElementById('patientModal').classList.replace('flex', 'hidden'); }
+    function openDriveModal() { document.getElementById('driveModal').classList.replace('hidden', 'flex'); }
+    function closeDriveModal() { document.getElementById('driveModal').classList.replace('flex', 'hidden'); }
+
+    function setCategoryFilter(f) {
+      activeFilter = f;
+      renderPatientsList();
     }
 
-    function formatVisitDate(dateStr) {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString('uk-UA', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    function refreshIcons() {
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toastContainer');
       if (!container) return;
-      const toast = document.createElement('div');
-      const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
-      toast.className = `${bg} text-white px-3.5 py-2 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2`;
-      toast.innerHTML = `<span>${escapeHtml(msg)}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => { toast.remove(); }, 3000);
+      const t = document.createElement('div');
+      const bg = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-slate-800');
+      t.className = `${bg} text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-lg`;
+      t.textContent = msg;
+      container.appendChild(t);
+      setTimeout(() => t.remove(), 3200);
     }
   </script>
 </body>
