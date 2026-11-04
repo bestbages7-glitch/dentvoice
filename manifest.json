@@ -1,18 +1,15 @@
 {
   "name": "DentVoice",
   "short_name": "DentVoice",
-  "id": "/dentvoice/",
   "start_url": "./index.html",
-  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#0284c7",
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230284c7'/%3E%3Cpath d='M256 60C160 60 90 120 90 200c0 90 40 180 90 260 16-40 30-80 76-80s60 40 76 80c50-80 90-170 90-260 0-80-70-140-166-140z' fill='white' stroke='%230369a1' stroke-width='14' stroke-linejoin='round'/%3E%3Crect x='216' y='140' width='80' height='120' rx='40' fill='%230284c7'/%3E%3Cpath d='M186 210c0 40 30 70 70 70s70-30 70-70' fill='none' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='256' y1='280' x2='256' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='216' y1='330' x2='296' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "./icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
