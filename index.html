@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>DentVoice — Хмарний стоматологічний щоденник</title>
 
-  <!-- PWA Manifest & Meta Tags -->
+  <!-- PWA Manifest & App Config -->
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0284c7" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="DentVoice" />
 
-  <!-- Іконка для Android & iOS: Зубчик з мікрофоном -->
+  <!-- Іконка (Зубчик з мікрофоном) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230284c7'/%3E%3Cpath d='M256 60C160 60 90 120 90 200c0 90 40 180 90 260 16-40 30-80 76-80s60 40 76 80c50-80 90-170 90-260 0-80-70-140-166-140z' fill='white' stroke='%230369a1' stroke-width='14' stroke-linejoin='round'/%3E%3Crect x='216' y='140' width='80' height='120' rx='40' fill='%230284c7'/%3E%3Cpath d='M186 210c0 40 30 70 70 70s70-30 70-70' fill='none' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='256' y1='280' x2='256' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='216' y1='330' x2='296' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='110' fill='%230284c7'/%3E%3Cpath d='M256 60C160 60 90 120 90 200c0 90 40 180 90 260 16-40 30-80 76-80s60 40 76 80c50-80 90-170 90-260 0-80-70-140-166-140z' fill='white' stroke='%230369a1' stroke-width='14' stroke-linejoin='round'/%3E%3Crect x='216' y='140' width='80' height='120' rx='40' fill='%230284c7'/%3E%3Cpath d='M186 210c0 40 30 70 70 70s70-30 70-70' fill='none' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='256' y1='280' x2='256' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3Cline x1='216' y1='330' x2='296' y2='330' stroke='%230284c7' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E">
 
@@ -63,8 +63,8 @@
 
     <!-- Right Actions -->
     <div class="flex items-center gap-1.5 sm:gap-2">
-      <!-- Кнопка Встановити застосунок -->
-      <button id="installPwaBtn" onclick="triggerPWAInstall()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition">
+      <!-- Кнопка Встановити застосунок (автоматично ховається, якщо вже встановлено) -->
+      <button id="installPwaBtn" onclick="triggerPWAInstall()" class="hidden items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition">
         <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
         <span>Встановити</span>
       </button>
@@ -146,7 +146,7 @@
 
       <div class="p-5 space-y-4 text-xs sm:text-sm">
         <p class="text-slate-600 leading-relaxed">
-          Вставте сюди посилання на ваш опублікований вебзастосунок <strong>Google Apps Script</strong>. Усі пацієнти та голосові записи будуть автоматично створюватися у папці <code>/DentVoice_Patients/</code> на вашому Диску.
+          Вставте сюди посилання на ваш опублікований вебзастосунок <strong>Google Apps Script</strong>. Усі пацієнти та прийоми зберігатимуться у папці <code>/DentVoice_Patients/</code> на вашому Диску.
         </p>
 
         <div>
@@ -155,7 +155,7 @@
         </div>
 
         <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs">
-          💡 Це посилання зберігається лише один раз у браузері телефону. Після збереження ніяких паролів більше вводити не потрібно.
+          💡 Це посилання зберігається лише один раз у браузері. Після цього вхід відбувається автоматично.
         </div>
       </div>
 
@@ -187,7 +187,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">ПІБ пацієнта *</label>
-          <input id="formName" type="text" required placeholder="Напр.: Коваленко Марія Олексіївна" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-sky-500/30" />
+          <input id="formName" type="text" required placeholder="Напр.: Коваленко Марія" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-sky-500/30" />
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -242,22 +242,36 @@
 
     let gasBackendUrl = localStorage.getItem('DENTVOICE_GAS_URL') || '';
 
-    // Реєстрація Service Worker для повноцінного WebAPK
+    // Перевірка, чи застосунок вже запущено як встановлений PWA
+    function isRunningStandalone() {
+      return (window.matchMedia('(display-mode: standalone)').matches) || 
+             (window.navigator.standalone === true);
+    }
+
+    // Реєстрація Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
       });
     }
 
-    // Відловлюємо системний діалог встановлення
+    // Відловлюємо подію готовності до встановлення
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
       const installBtn = document.getElementById('installPwaBtn');
-      if (installBtn) {
+      if (installBtn && !isRunningStandalone()) {
         installBtn.classList.remove('hidden');
         installBtn.classList.add('flex');
       }
+    });
+
+    // Якщо користувач щойно успішно встановив застосунок
+    window.addEventListener('appinstalled', () => {
+      const installBtn = document.getElementById('installPwaBtn');
+      if (installBtn) installBtn.classList.add('hidden');
+      deferredInstallPrompt = null;
+      showToast('DentVoice успішно встановлено на головний екран!', 'success');
     });
 
     function triggerPWAInstall() {
@@ -265,17 +279,23 @@
         deferredInstallPrompt.prompt();
         deferredInstallPrompt.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
-            showToast('Встановлення розпочато!', 'success');
+            const installBtn = document.getElementById('installPwaBtn');
+            if (installBtn) installBtn.classList.add('hidden');
           }
           deferredInstallPrompt = null;
         });
       } else {
-        // Якщо браузер ще кешує
         showToast('Відкрийте меню Chrome (3 крапки) та оберіть "Встановити застосунок"', 'info');
       }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      // Якщо відкрито як окремий додаток — повністю ховаємо кнопку
+      if (isRunningStandalone()) {
+        const installBtn = document.getElementById('installPwaBtn');
+        if (installBtn) installBtn.classList.add('hidden');
+      }
+
       updateCloudStatus();
       if (gasBackendUrl) {
         document.getElementById('gasUrlInput').value = gasBackendUrl;
