@@ -1,10 +1,12 @@
 {
-  "name": "DentVoice — Стоматологічний Щоденник",
+  "name": "DentVoice",
   "short_name": "DentVoice",
+  "id": "/dentvoice/",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f172a",
+  "background_color": "#ffffff",
   "theme_color": "#0284c7",
   "icons": [
     {
